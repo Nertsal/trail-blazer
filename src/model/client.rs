@@ -11,16 +11,16 @@ pub struct ClientModel {
 
 impl ClientModel {
     pub fn new(player_id: ClientId, model: shared::SharedModel) -> Self {
-        let map = model.map.world_bounds();
+        let map = model.map.world_bounds().as_f32();
         Self {
             player_id,
             messages: Vec::new(),
             camera: Camera2d {
-                center: map.center().as_f32(),
+                center: map.center(),
                 rotation: Angle::ZERO,
                 fov: Camera2dFov::Cover {
-                    width: map.width().as_f32(),
-                    height: map.height().as_f32(),
+                    width: map.width() * 1.2,
+                    height: map.height() * 1.2,
                     scale: 1.0,
                 },
             },

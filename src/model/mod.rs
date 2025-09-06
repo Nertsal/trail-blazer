@@ -18,7 +18,7 @@ pub struct Map {
 impl Map {
     pub fn new(size: vec2<ICoord>) -> Self {
         Self {
-            bounds: Aabb2::from_corners(-size / 2, size / 2),
+            bounds: Aabb2::from_corners(-size / 2, size / 2 + size.map(|x| x % 2 - 1)),
             cell_size: vec2::splat(FCoord::ONE),
         }
     }
@@ -30,7 +30,7 @@ impl Map {
     pub fn world_bounds(&self) -> Aabb2<FCoord> {
         Aabb2::from_corners(
             self.to_world(self.bounds.min),
-            self.to_world(self.bounds.max),
+            self.to_world(self.bounds.max + vec2(1, 1)),
         )
     }
 
@@ -49,6 +49,11 @@ impl Map {
     pub fn from_world(&self, pos: vec2<FCoord>) -> Option<vec2<ICoord>> {
         let pos = self.from_world_unbound(pos);
         self.is_in_bounds(pos).then_some(pos)
+    }
+
+    pub fn tile_bounds(&self, pos: vec2<ICoord>) -> Aabb2<FCoord> {
+        let pos = self.to_world(pos);
+        Aabb2::point(pos).extend_positive(self.cell_size)
     }
 }
 
