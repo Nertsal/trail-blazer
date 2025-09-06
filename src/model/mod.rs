@@ -13,13 +13,15 @@ pub type FTime = R32;
 pub struct Map {
     pub bounds: Aabb2<ICoord>,
     pub cell_size: vec2<FCoord>,
+    pub walls: Vec<vec2<ICoord>>,
 }
 
 impl Map {
     pub fn new(size: vec2<ICoord>) -> Self {
         Self {
-            bounds: Aabb2::from_corners(-size / 2, size / 2 + size.map(|x| x % 2 - 1)),
+            bounds: Aabb2::from_corners(-size / 2 - size.map(|x| x % 2 - 1), size / 2),
             cell_size: vec2::splat(FCoord::ONE),
+            walls: Vec::new(),
         }
     }
 

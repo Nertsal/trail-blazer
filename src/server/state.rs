@@ -20,7 +20,8 @@ impl ServerState {
     pub const TICKS_PER_SECOND: f32 = 1.0;
 
     pub fn new() -> Self {
-        let map = Map::new(vec2(14, 7));
+        let mut map = Map::new(vec2(14, 7));
+        map.walls = vec![vec2(3, 0), vec2(-2, 0)];
         Self {
             timer: Timer::new(),
             next_id: 1,

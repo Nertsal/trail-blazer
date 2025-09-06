@@ -28,8 +28,13 @@ impl GameRender {
         // Map tiles
         for x in map.bounds.min.x..=map.bounds.max.x {
             for y in map.bounds.min.y..=map.bounds.max.y {
-                let tile = &self.assets.sprites.tile;
-                let pos = map.tile_bounds(vec2(x, y)).as_f32();
+                let pos = vec2(x, y);
+                let tile = if map.walls.contains(&pos) {
+                    &self.assets.sprites.wall
+                } else {
+                    &self.assets.sprites.tile
+                };
+                let pos = map.tile_bounds(pos).as_f32();
                 geng_utils::texture::DrawTexture::new(tile)
                     .fit(pos, vec2(0.5, 0.5))
                     .draw(&model.camera, &self.geng, framebuffer);
