@@ -1,5 +1,7 @@
 pub mod logic;
 
+use crate::interop::{ClientMessage, ServerMessage};
+
 use geng::prelude::*;
 use geng_utils::conversions::*;
 
@@ -54,16 +56,21 @@ pub struct PlayerTrail {
 }
 
 pub struct Model {
-    map: Map,
+    pub messages: Vec<ClientMessage>,
 
-    players: Vec<Player>,
-    trails: Vec<PlayerTrail>,
+    pub map: Map,
+
+    pub players: Vec<Player>,
+    pub trails: Vec<PlayerTrail>,
 }
 
 impl Model {
     pub fn new(map_size: vec2<ICoord>) -> Self {
         Self {
+            messages: Vec::new(),
+
             map: Map::new(map_size),
+
             players: Vec::new(),
             trails: Vec::new(),
         }

@@ -4,7 +4,6 @@ use geng::prelude::*;
 
 pub struct Game {
     connection: ClientConnection,
-    sends: std::sync::mpsc::Receiver<ClientMessage>,
     geng: Geng,
     assets: Rc<Assets>,
     model: Model,
@@ -15,11 +14,9 @@ impl Game {
         let ServerMessage::Setup(setup) = connection.next().await.unwrap().unwrap() else {
             unreachable!()
         };
-        let (sender, sends) = std::sync::mpsc::channel();
 
         Self {
             connection,
-            sends,
             geng: geng.clone(),
             assets: assets.clone(),
             model: Model::new(setup.map_size),
@@ -35,13 +32,18 @@ impl geng::State for Game {
     }
 
     fn update(&mut self, delta_time: f64) {
+        // Process server messages
         for message in self.connection.new_messages() {
             let message = message.unwrap();
-            self.model.send(message);
+            self.model.handle_message(message);
         }
-        while let Ok(message) = self.sends.try_recv() {
+
+        // Send client messages
+        for message in std::mem::take(&mut self.model.messages) {
             self.connection.send(message);
         }
+
+        // Update model
         let delta_time = FTime::new(delta_time as f32);
         self.model.update(delta_time);
     }
