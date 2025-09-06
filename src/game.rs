@@ -21,7 +21,7 @@ impl Game {
             geng: geng.clone(),
             assets: assets.clone(),
             render: GameRender::new(geng, assets),
-            model: client::ClientModel::new(setup.player_id, shared::SharedModel::new(setup.map)),
+            model: client::ClientModel::new(setup.player_id, setup.model),
         }
     }
 

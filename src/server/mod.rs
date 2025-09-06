@@ -49,7 +49,7 @@ impl geng::net::server::App for App {
         let my_id = state.next_id;
         state.next_id += 1;
 
-        sender.send(ServerMessage::Setup(state.get_setup(my_id)));
+        sender.send(ServerMessage::Setup(state.new_player(my_id)));
         sender.send(ServerMessage::Ping);
         // let token = Alphanumeric.sample_string(&mut thread_rng(), 16);
         // sender.send(ServerMessage::YourToken(token.clone()));

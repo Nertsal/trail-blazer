@@ -1,4 +1,7 @@
-use crate::{assets::*, model::client::ClientModel};
+use crate::{
+    assets::*,
+    model::{client::ClientModel, *},
+};
 
 use geng::prelude::*;
 use geng_utils::conversions::*;
@@ -83,6 +86,18 @@ impl GameRender {
                     .fit(pos, vec2(0.5, 0.5))
                     .draw(&model.camera, &self.geng, framebuffer);
             }
+        }
+
+        // Players
+        for player in &model.shared.players {
+            let texture = match player.character {
+                Character::Bunny => &sprites.char_bunny,
+                Character::Fox => &sprites.char_fox,
+            };
+            let pos = map.tile_bounds(player.pos).as_f32();
+            geng_utils::texture::DrawTexture::new(texture)
+                .fit(pos, vec2(0.5, 0.5))
+                .draw(&model.camera, &self.geng, framebuffer);
         }
     }
 }

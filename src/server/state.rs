@@ -31,10 +31,26 @@ impl ServerState {
         }
     }
 
-    pub fn get_setup(&self, player_id: ClientId) -> Setup {
+    pub fn new_player(&mut self, player_id: ClientId) -> Setup {
+        // NOTE: can infinite loop
+        let pos = loop {
+            let pos = self.model.map.random_position();
+            if self.model.map.walls.contains(&pos)
+                || self.model.players.iter().any(|player| player.pos == pos)
+            {
+                continue;
+            } else {
+                break pos;
+            }
+        };
+        self.model.players.push(Player {
+            id: player_id,
+            character: Character::random(),
+            pos,
+        });
         Setup {
             player_id,
-            map: self.model.map.clone(),
+            model: self.model.clone(),
         }
     }
 

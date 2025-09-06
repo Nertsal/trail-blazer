@@ -20,5 +20,5 @@ pub enum ClientMessage {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Setup {
     pub player_id: ClientId,
-    pub map: Map,
+    pub model: shared::SharedModel,
 }

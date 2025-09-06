@@ -1,12 +1,13 @@
 pub mod client;
 pub mod shared;
 
+use crate::interop::ClientId;
+
 use geng::prelude::*;
 use geng_utils::conversions::*;
 
 pub type ICoord = i64;
 pub type FCoord = R32;
-pub type Turns = u64;
 pub type FTime = R32;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -36,6 +37,14 @@ impl Map {
         )
     }
 
+    pub fn random_position(&self) -> vec2<ICoord> {
+        let mut rng = thread_rng();
+        vec2(
+            rng.gen_range(self.bounds.min.x..=self.bounds.max.x),
+            rng.gen_range(self.bounds.min.y..=self.bounds.max.y),
+        )
+    }
+
     pub fn from_world_unbound(&self, pos: vec2<FCoord>) -> vec2<ICoord> {
         (pos / self.cell_size).map(|x| x.floor().as_f32() as ICoord)
     }
@@ -59,12 +68,34 @@ impl Map {
     }
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum Character {
+    Bunny,
+    Fox,
+}
+
+impl Character {
+    pub fn random() -> Self {
+        *[Self::Bunny, Self::Fox].choose(&mut thread_rng()).unwrap()
+    }
+
+    pub fn color(&self) -> Rgba<f32> {
+        match self {
+            Character::Bunny => Rgba::try_from("#B03B59").unwrap(),
+            Character::Fox => Rgba::try_from("#5590B4").unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Player {
+    pub id: ClientId,
+    pub character: Character,
     pub pos: vec2<ICoord>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayerTrail {
+    pub player: ClientId,
     pub pos: vec2<ICoord>,
-    /// Trail's lifetime in game turns.
-    pub time_left: Turns,
 }

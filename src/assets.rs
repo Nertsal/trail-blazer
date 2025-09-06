@@ -18,8 +18,8 @@ pub struct Sprites {
     pub outline_straight_right: PixelTexture,
     pub tile: PixelTexture,
     pub wall: PixelTexture,
-    pub bunny: PixelTexture,
-    pub fox: PixelTexture,
+    pub char_bunny: PixelTexture,
+    pub char_fox: PixelTexture,
 }
 
 impl Assets {

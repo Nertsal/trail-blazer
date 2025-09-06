@@ -1,5 +1,6 @@
 use super::*;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SharedModel {
     pub map: Map,
 
