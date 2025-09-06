@@ -19,8 +19,8 @@ impl ClientModel {
                 center: map.center(),
                 rotation: Angle::ZERO,
                 fov: Camera2dFov::Cover {
-                    width: map.width() * 1.2,
-                    height: map.height() * 1.2,
+                    width: map.width() * 1.8,
+                    height: map.height() * 1.8,
                     scale: 1.0,
                 },
             },

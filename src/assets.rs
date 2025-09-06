@@ -10,6 +10,12 @@ pub struct Assets {
 #[derive(geng::asset::Load)]
 pub struct Sprites {
     pub background: PixelTexture,
+    pub outline_corner_tl: PixelTexture,
+    pub outline_corner_bl: PixelTexture,
+    pub outline_corner_br: PixelTexture,
+    pub outline_corner_tr: PixelTexture,
+    pub outline_straight_up: PixelTexture,
+    pub outline_straight_right: PixelTexture,
     pub tile: PixelTexture,
     pub wall: PixelTexture,
     pub bunny: PixelTexture,
