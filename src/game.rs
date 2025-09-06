@@ -1,4 +1,4 @@
-use crate::{assets::*, interop::*, model::*};
+use crate::{assets::*, interop::*, model::*, render::GameRender};
 
 use geng::prelude::*;
 
@@ -6,7 +6,8 @@ pub struct Game {
     connection: ClientConnection,
     geng: Geng,
     assets: Rc<Assets>,
-    model: Model,
+    render: GameRender,
+    model: client::ClientModel,
 }
 
 impl Game {
@@ -19,7 +20,8 @@ impl Game {
             connection,
             geng: geng.clone(),
             assets: assets.clone(),
-            model: Model::new(setup.map_size),
+            render: GameRender::new(geng, assets),
+            model: client::ClientModel::new(setup.player_id, shared::SharedModel::new(setup.map)),
         }
     }
 
@@ -49,6 +51,12 @@ impl geng::State for Game {
     }
 
     fn draw(&mut self, framebuffer: &mut ugli::Framebuffer) {
-        ugli::clear(framebuffer, Some(Rgba::BLACK), None, None);
+        ugli::clear(
+            framebuffer,
+            Some(Rgba::try_from("#1A151F").unwrap()),
+            None,
+            None,
+        );
+        self.render.draw_game(&self.model, framebuffer);
     }
 }

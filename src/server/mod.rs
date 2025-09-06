@@ -45,20 +45,21 @@ impl geng::net::server::App for App {
         if state.clients.is_empty() {
             state.timer.reset();
         }
-        sender.send(ServerMessage::Setup(state.get_setup()));
+
+        let my_id = state.next_id;
+        state.next_id += 1;
+
+        sender.send(ServerMessage::Setup(state.get_setup(my_id)));
         sender.send(ServerMessage::Ping);
         // let token = Alphanumeric.sample_string(&mut thread_rng(), 16);
         // sender.send(ServerMessage::YourToken(token.clone()));
 
-        let my_id = state.next_id;
-        sender.send(ServerMessage::YourId(my_id));
         let client = Client {
             // token,
             sender,
         };
 
         state.clients.insert(my_id, client);
-        state.next_id += 1;
         ClientConnection {
             id: my_id,
             state: self.state.clone(),

@@ -1,6 +1,5 @@
-pub mod logic;
-
-use crate::interop::{ClientMessage, ServerMessage};
+pub mod client;
+pub mod shared;
 
 use geng::prelude::*;
 use geng_utils::conversions::*;
@@ -10,6 +9,7 @@ pub type FCoord = R32;
 pub type Turns = u64;
 pub type FTime = R32;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Map {
     pub bounds: Aabb2<ICoord>,
     pub cell_size: vec2<FCoord>,
@@ -25,6 +25,13 @@ impl Map {
 
     pub fn to_world(&self, pos: vec2<ICoord>) -> vec2<FCoord> {
         self.cell_size * pos.as_r32()
+    }
+
+    pub fn world_bounds(&self) -> Aabb2<FCoord> {
+        Aabb2::from_corners(
+            self.to_world(self.bounds.min),
+            self.to_world(self.bounds.max),
+        )
     }
 
     pub fn from_world_unbound(&self, pos: vec2<FCoord>) -> vec2<ICoord> {
@@ -53,26 +60,4 @@ pub struct PlayerTrail {
     pub pos: vec2<ICoord>,
     /// Trail's lifetime in game turns.
     pub time_left: Turns,
-}
-
-pub struct Model {
-    pub messages: Vec<ClientMessage>,
-
-    pub map: Map,
-
-    pub players: Vec<Player>,
-    pub trails: Vec<PlayerTrail>,
-}
-
-impl Model {
-    pub fn new(map_size: vec2<ICoord>) -> Self {
-        Self {
-            messages: Vec::new(),
-
-            map: Map::new(map_size),
-
-            players: Vec::new(),
-            trails: Vec::new(),
-        }
-    }
 }

@@ -1,5 +1,7 @@
 use super::*;
 
+use crate::model::shared::SharedModel;
+
 pub struct Config {}
 
 pub struct Client {
@@ -11,35 +13,32 @@ pub struct ServerState {
     pub next_id: ClientId,
     pub config: Config,
     pub clients: HashMap<ClientId, Client>,
-    pub map_size: vec2<ICoord>,
-    pub model: Model,
+    pub model: SharedModel,
 }
 
 impl ServerState {
     pub const TICKS_PER_SECOND: f32 = 1.0;
 
     pub fn new() -> Self {
-        let map_size = vec2(10, 10);
+        let map = Map::new(vec2(14, 7));
         Self {
             timer: Timer::new(),
             next_id: 1,
             config: Config {},
             clients: HashMap::new(),
-            map_size,
-            model: Model::new(map_size),
+            model: SharedModel::new(map),
         }
     }
 
-    pub fn get_setup(&self) -> Setup {
+    pub fn get_setup(&self, player_id: ClientId) -> Setup {
         Setup {
-            map_size: self.map_size,
+            player_id,
+            map: self.model.map.clone(),
         }
     }
 
     pub fn tick(&mut self) {
-        let delta_time = FTime::new(ServerState::TICKS_PER_SECOND.recip());
-        self.model.update(delta_time);
-        self.model.messages.clear();
+        // let delta_time = FTime::new(ServerState::TICKS_PER_SECOND.recip());
     }
 
     pub fn handle_message(&mut self, client_id: ClientId, message: ClientMessage) {

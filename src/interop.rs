@@ -9,7 +9,6 @@ pub type ClientConnection = geng::net::client::Connection<ServerMessage, ClientM
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ServerMessage {
     Ping,
-    YourId(ClientId),
     Setup(Setup),
 }
 
@@ -20,5 +19,6 @@ pub enum ClientMessage {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Setup {
-    pub map_size: vec2<ICoord>,
+    pub player_id: ClientId,
+    pub map: Map,
 }
