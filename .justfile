@@ -1,5 +1,8 @@
 list:
     just --list
 
-run *OPTIONS:
-    cargo run {{OPTIONS}}
+run *ARGS:
+    cargo run {{ARGS}}
+
+web command *ARGS:
+    cargo geng {{command}} --platform web --release -- {{ARGS}}
