@@ -29,7 +29,9 @@ impl ClientModel {
         }
     }
 
-    pub fn update(&mut self, delta_time: FTime) {}
+    pub fn update(&mut self, delta_time: FTime) {
+        self.shared.update(delta_time);
+    }
 
     pub fn handle_message(&mut self, message: ServerMessage) {
         match message {
@@ -37,6 +39,7 @@ impl ClientModel {
                 self.messages.push(ClientMessage::Pong);
             }
             ServerMessage::Setup(_setup) => {}
+            ServerMessage::StartResolution(model) => self.shared = model,
         }
     }
 }

@@ -1,6 +1,7 @@
 use crate::{assets::*, interop::*, model::*, render::GameRender};
 
 use geng::prelude::*;
+use geng_utils::conversions::*;
 
 pub struct Game {
     connection: ClientConnection,
@@ -8,6 +9,20 @@ pub struct Game {
     assets: Rc<Assets>,
     render: GameRender,
     model: client::ClientModel,
+
+    framebuffer_size: vec2<usize>,
+    cursor_pos: vec2<f64>,
+    cursor_world_pos: vec2<FCoord>,
+    cursor_grid_pos: vec2<ICoord>,
+    drag: Option<Drag>,
+}
+
+pub struct Drag {
+    pub target: DragTarget,
+}
+
+pub enum DragTarget {
+    Player { path: Vec<vec2<ICoord>> },
 }
 
 impl Game {
@@ -22,10 +37,95 @@ impl Game {
             assets: assets.clone(),
             render: GameRender::new(geng, assets),
             model: client::ClientModel::new(setup.player_id, setup.model),
+
+            framebuffer_size: vec2(1, 1),
+            cursor_pos: vec2::ZERO,
+            cursor_world_pos: vec2::ZERO,
+            cursor_grid_pos: vec2::ZERO,
+            drag: None,
         }
     }
 
-    fn handle_event(&mut self, event: geng::Event) {}
+    fn handle_event(&mut self, event: geng::Event) {
+        match event {
+            geng::Event::MousePress {
+                button: geng::MouseButton::Left,
+            } => self.mouse_press(),
+            geng::Event::MouseRelease {
+                button: geng::MouseButton::Left,
+            } => self.mouse_release(),
+            geng::Event::CursorMove { position } => self.cursor_move(position),
+            _ => {}
+        }
+    }
+
+    fn mouse_press(&mut self) {
+        if let Some(player) = self
+            .model
+            .shared
+            .players
+            .values()
+            .find(|player| player.pos == self.cursor_grid_pos)
+        {
+            // Drag player
+            if player.id == self.model.player_id {
+                self.drag = Some(Drag {
+                    target: DragTarget::Player {
+                        path: vec![player.pos],
+                    },
+                });
+            }
+        }
+    }
+
+    fn mouse_release(&mut self) {
+        if let Some(drag) = self.drag.take() {
+            match drag.target {
+                DragTarget::Player { path } => {
+                    self.connection.send(ClientMessage::SubmitMove(path));
+                }
+            }
+        }
+    }
+
+    fn cursor_move(&mut self, position: vec2<f64>) {
+        self.cursor_pos = position;
+        self.cursor_world_pos = self
+            .model
+            .camera
+            .screen_to_world(self.framebuffer_size.as_f32(), position.as_f32())
+            .as_r32();
+        self.cursor_grid_pos = self
+            .model
+            .shared
+            .map
+            .from_world_unbound(self.cursor_world_pos);
+
+        if let Some(drag) = &mut self.drag {
+            match &mut drag.target {
+                DragTarget::Player { path } => {
+                    if path
+                        .len()
+                        .checked_sub(2)
+                        .and_then(|i| path.get(i))
+                        .is_some_and(|&prev_pos| prev_pos == self.cursor_grid_pos)
+                    {
+                        // Cancel last move
+                        path.pop();
+                        self.connection
+                            .send(ClientMessage::SubmitMove(path.clone()));
+                    } else if path.last() != Some(&self.cursor_grid_pos) {
+                        // Add tile
+                        // TODO: check max distance
+                        // TODO: check adjacency
+                        path.push(self.cursor_grid_pos);
+                        self.connection
+                            .send(ClientMessage::SubmitMove(path.clone()));
+                    }
+                }
+            }
+        }
+    }
 }
 
 impl geng::State for Game {
@@ -51,6 +151,7 @@ impl geng::State for Game {
     }
 
     fn draw(&mut self, framebuffer: &mut ugli::Framebuffer) {
+        self.framebuffer_size = framebuffer.size();
         ugli::clear(
             framebuffer,
             Some(Rgba::try_from("#1A151F").unwrap()),

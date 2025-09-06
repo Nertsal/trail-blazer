@@ -89,7 +89,7 @@ impl GameRender {
         }
 
         // Players
-        for player in &model.shared.players {
+        for player in model.shared.players.values() {
             let texture = match player.character {
                 Character::Bunny => &sprites.char_bunny,
                 Character::Fox => &sprites.char_fox,

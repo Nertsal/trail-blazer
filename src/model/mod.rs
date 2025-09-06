@@ -92,6 +92,8 @@ pub struct Player {
     pub id: ClientId,
     pub character: Character,
     pub pos: vec2<ICoord>,
+    pub speed: ICoord,
+    pub submitted_move: Vec<vec2<ICoord>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -10,11 +10,13 @@ pub type ClientConnection = geng::net::client::Connection<ServerMessage, ClientM
 pub enum ServerMessage {
     Ping,
     Setup(Setup),
+    StartResolution(shared::SharedModel),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ClientMessage {
     Pong,
+    SubmitMove(Vec<vec2<ICoord>>),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
