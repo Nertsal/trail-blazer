@@ -88,6 +88,24 @@ impl GameRender {
             }
         }
 
+        // Trails
+        for trail in &model.shared.trails {
+            let color = model
+                .shared
+                .players
+                .get(&trail.player)
+                .map(|player| player.character.color())
+                .unwrap_or(Rgba::MAGENTA);
+            let pos = map.tile_bounds(trail.pos).as_f32();
+            self.geng.draw2d().circle(
+                framebuffer,
+                &model.camera,
+                pos.center(),
+                pos.width() / 4.0,
+                color,
+            );
+        }
+
         // Players
         for player in model.shared.players.values() {
             let texture = match player.character {
@@ -108,7 +126,7 @@ impl GameRender {
                     framebuffer,
                     &model.camera,
                     pos.center(),
-                    pos.width() / 4.0,
+                    pos.width() / 8.0,
                     player.character.color(),
                 );
             }
