@@ -26,6 +26,9 @@ pub struct Sprites {
     pub characters: CharacterSprites,
     pub trail: TrailSprites,
     pub abilities: AbilitySprites,
+    pub mushrooms_panel: PixelTexture,
+    pub mushroom_slot: PixelTexture,
+    pub mushroom_collected: PixelTexture,
 }
 
 #[derive(geng::asset::Load)]

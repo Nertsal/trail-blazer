@@ -29,6 +29,7 @@ pub struct GameUi {
     pub ability_sprint: WidgetState,
     pub ability_teleport: WidgetState,
     pub ability_throw: WidgetState,
+    pub mushrooms: WidgetState,
 }
 
 pub struct Drag {
@@ -225,6 +226,7 @@ impl GameUi {
             ability_sprint: WidgetState::new(),
             ability_teleport: WidgetState::new(),
             ability_throw: WidgetState::new(),
+            mushrooms: WidgetState::new(),
         }
     }
 
@@ -251,5 +253,10 @@ impl GameUi {
             ability.update(Aabb2::point(pos).extend_positive(ability_size), context);
             pos.x += ability_size.x;
         }
+
+        self.mushrooms.update(
+            Aabb2::point(pos).extend_positive(vec2(ability_size.x * 5.0, ability_size.y)),
+            context,
+        );
     }
 }

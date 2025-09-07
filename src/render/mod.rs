@@ -238,6 +238,34 @@ impl GameRender {
                 texture,
                 Rgba::WHITE,
             );
+
+            // Mushrooms
+            self.geng.draw2d().textured_quad(
+                framebuffer,
+                &geng::PixelPerfectCamera,
+                ui.mushrooms.position,
+                &self.assets.sprites.mushrooms_panel,
+                Rgba::WHITE,
+            );
+            let mushroom_size = ui.mushrooms.position.size() * vec2(0.2, 1.0);
+            for i in 0..5 {
+                let pos = Aabb2::point(
+                    ui.mushrooms.position.bottom_left() + vec2(mushroom_size.x * i as f32, 0.0),
+                )
+                .extend_positive(mushroom_size);
+                let texture = if player.mushrooms <= i {
+                    &self.assets.sprites.mushroom_slot
+                } else {
+                    &self.assets.sprites.mushroom_collected
+                };
+                self.geng.draw2d().textured_quad(
+                    framebuffer,
+                    &geng::PixelPerfectCamera,
+                    pos,
+                    texture,
+                    Rgba::WHITE,
+                );
+            }
         }
 
         if let Phase::Planning { time_left } = model.shared.phase {
