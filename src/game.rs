@@ -3,6 +3,7 @@ use crate::{
     interop::*,
     model::{shared::Phase, *},
     render::GameRender,
+    ui::{UiContext, WidgetState},
 };
 
 use geng::prelude::*;
@@ -12,14 +13,22 @@ pub struct Game {
     connection: ClientConnection,
     geng: Geng,
     assets: Rc<Assets>,
+    ui_context: UiContext,
     render: GameRender,
     model: client::ClientModel,
+    ui: GameUi,
 
     framebuffer_size: vec2<usize>,
     cursor_pos: vec2<f64>,
     cursor_world_pos: vec2<FCoord>,
     cursor_grid_pos: vec2<ICoord>,
     drag: Option<Drag>,
+}
+
+pub struct GameUi {
+    pub ability_sprint: WidgetState,
+    pub ability_teleport: WidgetState,
+    pub ability_throw: WidgetState,
 }
 
 pub struct Drag {
@@ -40,8 +49,10 @@ impl Game {
             connection,
             geng: geng.clone(),
             assets: assets.clone(),
+            ui_context: UiContext::new(geng, assets),
             render: GameRender::new(geng, assets),
             model: client::ClientModel::new(setup.player_id, setup.model),
+            ui: GameUi::new(geng, assets),
 
             framebuffer_size: vec2(1, 1),
             cursor_pos: vec2::ZERO,
@@ -60,6 +71,12 @@ impl Game {
                 button: geng::MouseButton::Left,
             } => self.mouse_release(),
             geng::Event::CursorMove { position } => self.cursor_move(position),
+            geng::Event::KeyPress { key } => match key {
+                geng::Key::Digit1 => todo!(),
+                geng::Key::Digit2 => todo!(),
+                geng::Key::Digit3 => todo!(),
+                _ => {}
+            },
             _ => {}
         }
     }
@@ -158,6 +175,14 @@ impl geng::State for Game {
     }
 
     fn update(&mut self, delta_time: f64) {
+        self.ui_context.update(delta_time as f32);
+        self.ui.update(
+            &mut self.ui_context,
+            delta_time as f32,
+            self.framebuffer_size,
+        );
+        self.ui_context.frame_end();
+
         // Process server messages
         for message in self.connection.new_messages() {
             let message = message.unwrap();
@@ -188,6 +213,43 @@ impl geng::State for Game {
             None,
             None,
         );
+
         self.render.draw_game(&mut self.model, framebuffer);
+        self.render.draw_game_ui(&self.model, &self.ui, framebuffer);
+    }
+}
+
+impl GameUi {
+    pub fn new(_geng: &Geng, _assets: &Rc<Assets>) -> Self {
+        Self {
+            ability_sprint: WidgetState::new(),
+            ability_teleport: WidgetState::new(),
+            ability_throw: WidgetState::new(),
+        }
+    }
+
+    pub fn update(
+        &mut self,
+        context: &mut UiContext,
+        delta_time: f32,
+        framebuffer_size: vec2<usize>,
+    ) {
+        let screen = Aabb2::ZERO.extend_positive(framebuffer_size.as_f32());
+        context.screen = screen;
+        context.update(delta_time);
+
+        let layout_size = screen.height() * 0.05;
+
+        let ability_size = vec2::splat(2.5 * layout_size);
+        let mut pos = screen.bottom_left() + vec2::splat(1.0 * layout_size);
+
+        for ability in [
+            &mut self.ability_sprint,
+            &mut self.ability_teleport,
+            &mut self.ability_throw,
+        ] {
+            ability.update(Aabb2::point(pos).extend_positive(ability_size), context);
+            pos.x += ability_size.x;
+        }
     }
 }

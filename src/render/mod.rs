@@ -1,5 +1,6 @@
 use crate::{
     assets::*,
+    game::GameUi,
     model::{client::ClientModel, shared::Phase, *},
 };
 
@@ -189,11 +190,56 @@ impl GameRender {
                     .draw(&model.camera, &self.geng, framebuffer);
             }
         }
-
-        self.draw_game_ui(model, framebuffer);
     }
 
-    pub fn draw_game_ui(&self, model: &ClientModel, framebuffer: &mut ugli::Framebuffer) {
+    pub fn draw_game_ui(
+        &self,
+        model: &ClientModel,
+        ui: &GameUi,
+        framebuffer: &mut ugli::Framebuffer,
+    ) {
+        if let Some(player) = model.shared.players.get(&model.player_id) {
+            // Abilities
+            let texture = if player.cooldown_sprint > 0 {
+                &self.assets.sprites.abilities.sprint_disable
+            } else {
+                &self.assets.sprites.abilities.sprint
+            };
+            self.geng.draw2d().textured_quad(
+                framebuffer,
+                &geng::PixelPerfectCamera,
+                ui.ability_sprint.position,
+                texture,
+                Rgba::WHITE,
+            );
+
+            let texture = if player.cooldown_teleport > 0 {
+                &self.assets.sprites.abilities.teleport_disable
+            } else {
+                &self.assets.sprites.abilities.teleport
+            };
+            self.geng.draw2d().textured_quad(
+                framebuffer,
+                &geng::PixelPerfectCamera,
+                ui.ability_teleport.position,
+                texture,
+                Rgba::WHITE,
+            );
+
+            let texture = if player.mushrooms == 0 {
+                &self.assets.sprites.abilities.throw_disable
+            } else {
+                &self.assets.sprites.abilities.throw
+            };
+            self.geng.draw2d().textured_quad(
+                framebuffer,
+                &geng::PixelPerfectCamera,
+                ui.ability_throw.position,
+                texture,
+                Rgba::WHITE,
+            );
+        }
+
         if let Phase::Planning { time_left } = model.shared.phase {
             // Planning timer
             let map_bounds = model.shared.map.world_bounds().as_f32();

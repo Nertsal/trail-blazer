@@ -6,6 +6,7 @@ mod game;
 mod interop;
 mod model;
 mod render;
+mod ui;
 
 use geng::prelude::*;
 

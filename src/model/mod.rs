@@ -165,6 +165,8 @@ pub struct Player {
     pub resolution_speed_max: usize,
     /// Remaining speed at resolution phase.
     pub resolution_speed_left: usize,
+    pub cooldown_sprint: Turns,
+    pub cooldown_teleport: Turns,
 }
 
 impl Player {
@@ -180,6 +182,8 @@ impl Player {
             stunned_duration: None,
             resolution_speed_max: 0,
             resolution_speed_left: 0,
+            cooldown_sprint: 0,
+            cooldown_teleport: 0,
         }
     }
 

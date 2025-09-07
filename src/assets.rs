@@ -25,6 +25,7 @@ pub struct Sprites {
     pub base: PixelTexture,
     pub characters: CharacterSprites,
     pub trail: TrailSprites,
+    pub abilities: AbilitySprites,
 }
 
 #[derive(geng::asset::Load)]
@@ -47,6 +48,16 @@ pub struct CharacterSprites {
     pub skeleton: PixelTexture,
     pub snake: PixelTexture,
     pub unicorn: PixelTexture,
+}
+
+#[derive(geng::asset::Load)]
+pub struct AbilitySprites {
+    pub sprint: PixelTexture,
+    pub sprint_disable: PixelTexture,
+    pub teleport: PixelTexture,
+    pub teleport_disable: PixelTexture,
+    pub throw: PixelTexture,
+    pub throw_disable: PixelTexture,
 }
 
 #[derive(geng::asset::Load)]
