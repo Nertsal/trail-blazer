@@ -18,7 +18,7 @@ pub struct ServerState {
 }
 
 impl ServerState {
-    pub const TICKS_PER_SECOND: f32 = 1.0;
+    pub const TICKS_PER_SECOND: f32 = 2.0;
 
     pub fn new() -> Self {
         let mut map = Map::new(vec2(14, 7));

@@ -99,10 +99,13 @@ pub struct Player {
     pub id: ClientId,
     pub character: Character,
     pub pos: vec2<ICoord>,
-    pub speed: usize,
+    pub max_speed: usize,
     pub submitted_move: Vec<vec2<ICoord>>,
     pub mushrooms: usize,
     pub stunned_duration: Option<Turns>,
+    /// Speed at the start of resolution phase.
+    pub resolution_speed_max: usize,
+    /// Remaining speed at resolution phase.
     pub resolution_speed_left: usize,
 }
 
@@ -112,11 +115,16 @@ impl Player {
             id,
             character,
             pos,
-            speed: 5,
+            max_speed: 5,
             submitted_move: vec![],
             mushrooms: 0,
             stunned_duration: None,
+            resolution_speed_max: 0,
             resolution_speed_left: 0,
         }
+    }
+
+    pub fn speed(&self) -> usize {
+        self.max_speed.saturating_sub(self.mushrooms).max(1)
     }
 }

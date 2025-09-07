@@ -133,7 +133,7 @@ impl Game {
                         player.submitted_move = path.clone();
                         self.connection
                             .send(ClientMessage::SubmitMove(path.clone()));
-                    } else if path.len() <= player.speed
+                    } else if path.len() <= player.speed()
                         && !path.contains(&self.cursor_grid_pos)
                         && let Some(&last) = path.last()
                         && shared::are_adjacent(last, self.cursor_grid_pos)

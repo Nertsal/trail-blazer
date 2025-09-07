@@ -17,25 +17,38 @@ pub enum Phase {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Mushroom {
+    pub position: vec2<ICoord>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SharedModel {
     pub map: Map,
 
     pub phase: Phase,
+
+    pub base: vec2<ICoord>,
     pub players: HashMap<ClientId, Player>,
+    pub mushrooms: Vec<Mushroom>,
     pub trails: Vec<PlayerTrail>,
 }
 
 impl SharedModel {
     pub fn new(map: Map) -> Self {
-        Self {
-            map,
-
+        let mut model = Self {
             phase: Phase::Planning {
                 time_left: FTime::new(TIME_PER_PLAN),
             },
+
+            base: map.bounds.center(),
             players: HashMap::new(),
+            mushrooms: Vec::new(),
             trails: Vec::new(),
-        }
+
+            map,
+        };
+        model.spawn_mushroom();
+        model
     }
 
     pub fn update(&mut self, delta_time: FTime) -> Vec<GameEvent> {
@@ -62,6 +75,26 @@ impl SharedModel {
             }
         }
         events
+    }
+
+    pub fn spawn_mushroom(&mut self) {
+        let mut position = None;
+        for _ in 0..10 {
+            let pos = self.map.random_position();
+            if self.map.walls.contains(&pos)
+                || self
+                    .players
+                    .values()
+                    .any(|player| distance(player.pos, pos) <= 2)
+            {
+                continue;
+            }
+
+            position = Some(pos);
+        }
+
+        let Some(position) = position else { return };
+        self.mushrooms.push(Mushroom { position });
     }
 
     fn finish_resolution(&mut self) {
@@ -102,7 +135,8 @@ impl SharedModel {
                 player.resolution_speed_left = 0;
                 player.submitted_move.clear();
             } else {
-                player.resolution_speed_left = player.speed;
+                player.resolution_speed_max = player.speed();
+                player.resolution_speed_left = player.speed();
             }
         }
         self.trails.clear();
@@ -132,7 +166,7 @@ impl SharedModel {
             .for_each(|player| {
                 if let Some(&pos) = player
                     .submitted_move
-                    .get(1 + player.speed - player.resolution_speed_left)
+                    .get(1 + player.resolution_speed_max - player.resolution_speed_left)
                 {
                     target_moves.entry(pos).or_default().push(player.id);
                 }
@@ -157,6 +191,16 @@ impl SharedModel {
 
                     // Move
                     if let Some(player) = self.players.get_mut(&player) {
+                        if let Some(shroom_i) = self
+                            .mushrooms
+                            .iter()
+                            .position(|shroom| shroom.position == target)
+                        {
+                            // Collect mushroom
+                            player.mushrooms += 1;
+                            self.mushrooms.swap_remove(shroom_i);
+                        }
+
                         self.trails.push(PlayerTrail {
                             player: player.id,
                             pos: player.pos,
@@ -189,12 +233,15 @@ impl SharedModel {
         player.resolution_speed_left = 0;
         player.stunned_duration = Some(duration);
 
+        // Drop mushroom
         if player.mushrooms > 0
             && let Some(&start_pos) = player.submitted_move.first()
             && start_pos != player.pos
         {
             player.mushrooms -= 1;
-            // TODO: drop mushroom
+            self.mushrooms.push(Mushroom {
+                position: start_pos,
+            });
         }
     }
 
@@ -203,7 +250,7 @@ impl SharedModel {
             return false;
         };
 
-        if path.len() > player.speed + 1 {
+        if path.len() > player.speed() + 1 {
             return false; // Path exceed player's speed
         }
 
@@ -226,4 +273,9 @@ impl SharedModel {
 pub fn are_adjacent(a: vec2<ICoord>, b: vec2<ICoord>) -> bool {
     let d = b - a;
     d.x.abs() + d.y.abs() == 1
+}
+
+pub fn distance(a: vec2<ICoord>, b: vec2<ICoord>) -> ICoord {
+    let d = b - a;
+    d.x.abs() + d.y.abs()
 }

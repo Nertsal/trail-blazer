@@ -94,6 +94,14 @@ impl GameRender {
             }
         }
 
+        // Mushrooms
+        for mushroom in &model.shared.mushrooms {
+            let pos = map.tile_bounds(mushroom.position).as_f32();
+            geng_utils::texture::DrawTexture::new(&self.assets.sprites.mushroom)
+                .fit(pos, vec2(0.5, 0.5))
+                .draw(&model.camera, &self.geng, framebuffer);
+        }
+
         // Trails
         for trail in &model.shared.trails {
             let color = model
