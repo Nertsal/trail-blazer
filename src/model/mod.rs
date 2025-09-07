@@ -92,6 +92,8 @@ impl Character {
 pub struct PlayerTrail {
     pub player: ClientId,
     pub pos: vec2<ICoord>,
+    pub connection_from: Option<vec2<ICoord>>,
+    pub connection_to: vec2<ICoord>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

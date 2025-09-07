@@ -3,7 +3,7 @@ use crate::{
     model::{client::ClientModel, shared::Phase, *},
 };
 
-use geng::prelude::*;
+use geng::prelude::{itertools::Itertools, *};
 use geng_utils::conversions::*;
 
 pub struct GameRender {
@@ -124,23 +124,22 @@ impl GameRender {
                 .get(&trail.player)
                 .map(|player| player.character.color())
                 .unwrap_or(Rgba::MAGENTA);
+
+            let (texture, rotation, flip) = get_trail_render(&sprites.trail, trail);
+
             let pos = map.tile_bounds(trail.pos).as_f32();
-            self.geng.draw2d().circle(
-                framebuffer,
-                &model.camera,
-                pos.center(),
-                pos.width() / 4.0,
-                color,
-            );
+            geng_utils::texture::DrawTexture::new(texture)
+                .fit(pos, vec2(0.5, 0.5))
+                .transformed(
+                    mat3::rotate(rotation) * mat3::scale(vec2(1.0, if flip { -1.0 } else { 1.0 })),
+                )
+                .colored(color)
+                .draw(&model.camera, &self.geng, framebuffer);
         }
 
         // Players
         for player in model.shared.players.values() {
-            let sprites = &sprites.characters;
-            let texture = match player.character {
-                Character::Bunny => &sprites.bunny,
-                Character::Fox => &sprites.fox,
-            };
+            let texture = get_character_sprite(&sprites.characters, player.character);
             let pos = map.tile_bounds(player.pos).as_f32();
             geng_utils::texture::DrawTexture::new(texture)
                 .fit(pos, vec2(0.5, 0.5))
@@ -149,15 +148,43 @@ impl GameRender {
 
         // Planned move
         if let Some(player) = model.shared.players.get(&model.player_id) {
-            for &tile in &player.submitted_move {
-                let pos = map.tile_bounds(tile).as_f32();
-                self.geng.draw2d().circle(
-                    framebuffer,
-                    &model.camera,
-                    pos.center(),
-                    pos.width() / 8.0,
-                    player.character.color(),
-                );
+            let skip = match model.shared.phase {
+                Phase::Planning { .. } => 0,
+                Phase::Resolution { .. } => {
+                    player.resolution_speed_max - player.resolution_speed_left
+                }
+            };
+            for (&from, &at, &to) in player.submitted_move.iter().skip(skip).tuple_windows() {
+                let trail = &PlayerTrail {
+                    player: player.id,
+                    pos: at,
+                    connection_from: Some(from),
+                    connection_to: to,
+                };
+
+                let color = Rgba::try_from("#393b42").unwrap();
+
+                let (texture, rotation, flip) = get_trail_render(&sprites.trail, trail);
+
+                let pos = map.tile_bounds(at).as_f32();
+                geng_utils::texture::DrawTexture::new(texture)
+                    .fit(pos, vec2(0.5, 0.5))
+                    .transformed(
+                        mat3::rotate(rotation)
+                            * mat3::scale(vec2(1.0, if flip { -1.0 } else { 1.0 })),
+                    )
+                    .colored(color)
+                    .draw(&model.camera, &self.geng, framebuffer);
+            }
+            if let Some(&pos) = player.submitted_move.last()
+                && player.pos != pos
+            {
+                let texture = get_character_sprite(&sprites.characters, player.character);
+                let pos = map.tile_bounds(pos).as_f32();
+                geng_utils::texture::DrawTexture::new(texture)
+                    .fit(pos, vec2(0.5, 0.5))
+                    .colored(Rgba::try_from("#ffffff55").unwrap())
+                    .draw(&model.camera, &self.geng, framebuffer);
             }
         }
 
@@ -183,6 +210,38 @@ impl GameRender {
                     )) * mat3::scale_uniform(0.25),
                 ),
             );
+        }
+    }
+}
+
+fn get_character_sprite(sprites: &CharacterSprites, character: Character) -> &PixelTexture {
+    match character {
+        Character::Bunny => &sprites.bunny,
+        Character::Fox => &sprites.fox,
+    }
+}
+
+fn get_trail_render<'a>(
+    sprites: &'a TrailSprites,
+    trail: &PlayerTrail,
+) -> (&'a PixelTexture, Angle<f32>, bool) {
+    match trail.connection_from {
+        None => (
+            &sprites.initial,
+            (trail.connection_to - trail.pos).as_f32().arg(),
+            false,
+        ),
+        Some(from) => {
+            if from.x == trail.connection_to.x {
+                (&sprites.straight, Angle::from_degrees(90.0), false)
+            } else if from.y == trail.connection_to.y {
+                (&sprites.straight, Angle::ZERO, false)
+            } else {
+                let from_angle = (trail.pos - from).as_f32().arg();
+                let to_angle = (trail.connection_to - trail.pos).as_f32().arg();
+                let flip = from_angle.angle_to(to_angle) < Angle::ZERO;
+                (&sprites.corner, from_angle, flip)
+            }
         }
     }
 }

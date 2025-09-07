@@ -21,15 +21,23 @@ pub struct Sprites {
     #[load(list = "0..=1")]
     pub tiles: Vec<PixelTexture>,
     pub wall: PixelTexture,
-    pub characters: CharacterSprites,
     pub mushroom: PixelTexture,
     pub base: PixelTexture,
+    pub characters: CharacterSprites,
+    pub trail: TrailSprites,
 }
 
 #[derive(geng::asset::Load)]
 pub struct CharacterSprites {
     pub bunny: PixelTexture,
     pub fox: PixelTexture,
+}
+
+#[derive(geng::asset::Load)]
+pub struct TrailSprites {
+    pub initial: PixelTexture,
+    pub straight: PixelTexture,
+    pub corner: PixelTexture,
 }
 
 impl Assets {

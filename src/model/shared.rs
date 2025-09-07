@@ -217,9 +217,17 @@ impl SharedModel {
                             player.mushrooms = 0;
                         }
 
+                        let connection_from = player
+                            .submitted_move
+                            .iter()
+                            .position(|&pos| pos == player.pos)
+                            .and_then(|i| i.checked_sub(1))
+                            .and_then(|i| player.submitted_move.get(i).copied());
                         self.trails.push(PlayerTrail {
                             player: player.id,
                             pos: player.pos,
+                            connection_from,
+                            connection_to: target,
                         });
                         player.pos = target;
                         player.resolution_speed_left -= 1;
