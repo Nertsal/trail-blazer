@@ -40,6 +40,7 @@ impl ClientModel {
             }
             ServerMessage::Setup(_setup) => {}
             ServerMessage::StartResolution(model) => self.shared = model,
+            ServerMessage::FinishResolution(model) => self.shared = model,
         }
     }
 }

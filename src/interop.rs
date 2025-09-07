@@ -11,6 +11,7 @@ pub enum ServerMessage {
     Ping,
     Setup(Setup),
     StartResolution(shared::SharedModel),
+    FinishResolution(shared::SharedModel),
 }
 
 #[derive(Debug, Serialize, Deserialize)]

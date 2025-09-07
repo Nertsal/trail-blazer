@@ -8,6 +8,8 @@ pub const TIME_PER_MOVE: f32 = 0.5;
 #[derive(Debug, Clone)]
 pub enum GameEvent {
     StartResolution,
+    FinishResolution,
+    MushroomsCollected(usize),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -64,12 +66,16 @@ impl SharedModel {
                 *next_move_in -= delta_time;
                 if *next_move_in <= FTime::ZERO {
                     let next = *next_move_in;
-                    if self.resolve_next_move() {
+
+                    let (es, resolve) = self.resolve_next_move();
+                    events.extend(es);
+
+                    if resolve {
                         self.phase = Phase::Resolution {
                             next_move_in: next + FTime::new(TIME_PER_MOVE),
                         };
                     } else {
-                        self.finish_resolution();
+                        events.push(GameEvent::FinishResolution);
                     }
                 }
             }
@@ -81,7 +87,8 @@ impl SharedModel {
         let mut position = None;
         for _ in 0..10 {
             let pos = self.map.random_position();
-            if self.map.walls.contains(&pos)
+            if distance(self.base, pos) <= 2
+                || self.map.walls.contains(&pos)
                 || self
                     .players
                     .values()
@@ -97,7 +104,7 @@ impl SharedModel {
         self.mushrooms.push(Mushroom { position });
     }
 
-    fn finish_resolution(&mut self) {
+    pub fn finish_resolution(&mut self) {
         for player in self.players.values_mut() {
             // Clear move
             player.submitted_move.clear();
@@ -148,7 +155,9 @@ impl SharedModel {
     /// Resolves the next batch of moves,
     /// returns true if more moves need to be resolved
     /// and false if all moves are resolved.
-    pub fn resolve_next_move(&mut self) -> bool {
+    pub fn resolve_next_move(&mut self) -> (Vec<GameEvent>, bool) {
+        let mut events = Vec::new();
+
         let resolving_speed = self
             .players
             .values()
@@ -156,7 +165,7 @@ impl SharedModel {
             .max()
             .unwrap_or(0);
         if resolving_speed == 0 {
-            return false;
+            return (events, false);
         }
 
         let mut target_moves: HashMap<vec2<ICoord>, Vec<ClientId>> = HashMap::new();
@@ -173,7 +182,7 @@ impl SharedModel {
             });
 
         if target_moves.is_empty() {
-            return false;
+            return (events, false);
         }
 
         // Check for bounces (multiple players moving into the same tile)
@@ -201,6 +210,13 @@ impl SharedModel {
                             self.mushrooms.swap_remove(shroom_i);
                         }
 
+                        if self.base == target {
+                            // Submit resources to base
+                            player.collected_mushrooms += player.mushrooms;
+                            events.push(GameEvent::MushroomsCollected(player.mushrooms));
+                            player.mushrooms = 0;
+                        }
+
                         self.trails.push(PlayerTrail {
                             player: player.id,
                             pos: player.pos,
@@ -222,7 +238,7 @@ impl SharedModel {
             player.resolution_speed_left = player.resolution_speed_left.min(resolving_speed - 1);
         }
 
-        true
+        (events, true)
     }
 
     pub fn stun_player(&mut self, player_id: ClientId, duration: Turns) {

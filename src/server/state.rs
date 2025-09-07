@@ -73,6 +73,19 @@ impl ServerState {
                             .send(ServerMessage::StartResolution(self.model.clone()));
                     }
                 }
+                GameEvent::FinishResolution => {
+                    self.model.finish_resolution();
+                    for client in self.clients.values_mut() {
+                        client
+                            .sender
+                            .send(ServerMessage::FinishResolution(self.model.clone()));
+                    }
+                }
+                GameEvent::MushroomsCollected(n) => {
+                    for _ in 0..n {
+                        self.model.spawn_mushroom();
+                    }
+                }
             }
         }
     }
