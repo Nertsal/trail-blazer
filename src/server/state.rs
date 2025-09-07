@@ -45,17 +45,9 @@ impl ServerState {
                 break pos;
             }
         };
-        self.model.players.insert(
-            player_id,
-            Player {
-                id: player_id,
-                character: Character::random(),
-                pos,
-                speed: 5,
-                submitted_move: vec![],
-                resolution_speed_left: 0,
-            },
-        );
+        self.model
+            .players
+            .insert(player_id, Player::new(player_id, Character::random(), pos));
         Setup {
             player_id,
             model: self.model.clone(),

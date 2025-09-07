@@ -56,17 +56,31 @@ impl SharedModel {
                             next_move_in: next + FTime::new(TIME_PER_MOVE),
                         };
                     } else {
-                        for player in self.players.values_mut() {
-                            player.submitted_move.clear();
-                        }
-                        self.phase = Phase::Planning {
-                            time_left: next + FTime::new(TIME_PER_PLAN),
-                        }
+                        self.finish_resolution();
                     }
                 }
             }
         }
         events
+    }
+
+    fn finish_resolution(&mut self) {
+        for player in self.players.values_mut() {
+            // Clear move
+            player.submitted_move.clear();
+
+            // Update stun
+            if let Some(stun) = &mut player.stunned_duration {
+                *stun -= 1;
+                if *stun < 0 {
+                    player.stunned_duration = None;
+                }
+            }
+        }
+
+        self.phase = Phase::Planning {
+            time_left: FTime::new(TIME_PER_PLAN),
+        }
     }
 
     pub fn start_resolution(&mut self) {
@@ -82,8 +96,9 @@ impl SharedModel {
             }
         }
 
+        // Update players
         for player in self.players.values_mut() {
-            if invalid.contains(&player.id) {
+            if player.stunned_duration.is_some() || invalid.contains(&player.id) {
                 player.resolution_speed_left = 0;
                 player.submitted_move.clear();
             } else {
@@ -96,7 +111,7 @@ impl SharedModel {
         };
     }
 
-    /// Resolves the next batch of player moves,
+    /// Resolves the next batch of moves,
     /// returns true if more moves need to be resolved
     /// and false if all moves are resolved.
     pub fn resolve_next_move(&mut self) -> bool {
@@ -132,6 +147,15 @@ impl SharedModel {
             if players.len() <= 1 {
                 // Just move the player - check for other collisions
                 for player in players {
+                    // Check collisions
+                    if self.players.values().any(|player| player.pos == target)
+                        || self.trails.iter().any(|trail| trail.pos == target)
+                    {
+                        self.stun_player(player, 1);
+                        continue;
+                    }
+
+                    // Move
                     if let Some(player) = self.players.get_mut(&player) {
                         self.trails.push(PlayerTrail {
                             player: player.id,
@@ -144,9 +168,7 @@ impl SharedModel {
             } else {
                 // Bounce all players
                 for player in players {
-                    if let Some(player) = self.players.get_mut(&player) {
-                        player.resolution_speed_left = 0;
-                    }
+                    self.stun_player(player, 1);
                 }
             }
         }
@@ -157,6 +179,23 @@ impl SharedModel {
         }
 
         true
+    }
+
+    pub fn stun_player(&mut self, player_id: ClientId, duration: Turns) {
+        let Some(player) = self.players.get_mut(&player_id) else {
+            return;
+        };
+
+        player.resolution_speed_left = 0;
+        player.stunned_duration = Some(duration);
+
+        if player.mushrooms > 0
+            && let Some(&start_pos) = player.submitted_move.first()
+            && start_pos != player.pos
+        {
+            player.mushrooms -= 1;
+            // TODO: drop mushroom
+        }
     }
 
     pub fn validate_path(&self, player_id: ClientId, path: &[vec2<ICoord>]) -> bool {

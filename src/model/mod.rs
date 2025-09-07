@@ -9,6 +9,7 @@ use geng_utils::conversions::*;
 pub type ICoord = i64;
 pub type FCoord = R32;
 pub type FTime = R32;
+pub type Turns = i64;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Map {
@@ -88,17 +89,34 @@ impl Character {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlayerTrail {
+    pub player: ClientId,
+    pub pos: vec2<ICoord>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Player {
     pub id: ClientId,
     pub character: Character,
     pub pos: vec2<ICoord>,
     pub speed: usize,
     pub submitted_move: Vec<vec2<ICoord>>,
+    pub mushrooms: usize,
+    pub stunned_duration: Option<Turns>,
     pub resolution_speed_left: usize,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PlayerTrail {
-    pub player: ClientId,
-    pub pos: vec2<ICoord>,
+impl Player {
+    pub fn new(id: ClientId, character: Character, pos: vec2<ICoord>) -> Self {
+        Self {
+            id,
+            character,
+            pos,
+            speed: 5,
+            submitted_move: vec![],
+            mushrooms: 0,
+            stunned_duration: None,
+            resolution_speed_left: 0,
+        }
+    }
 }

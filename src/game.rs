@@ -75,6 +75,7 @@ impl Game {
             // Drag player
             if player.id == self.model.player_id
                 && let Phase::Planning { .. } = self.model.shared.phase
+                && player.stunned_duration.is_none()
             {
                 self.drag = Some(Drag {
                     target: DragTarget::Player {
