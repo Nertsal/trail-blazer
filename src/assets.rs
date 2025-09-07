@@ -29,8 +29,24 @@ pub struct Sprites {
 
 #[derive(geng::asset::Load)]
 pub struct CharacterSprites {
+    pub ant: PixelTexture,
     pub bunny: PixelTexture,
+    pub cat: PixelTexture,
+    pub crab: PixelTexture,
+    pub dinosaur: PixelTexture,
+    pub dog: PixelTexture,
+    pub elephant: PixelTexture,
+    pub fishman: PixelTexture,
     pub fox: PixelTexture,
+    pub frog: PixelTexture,
+    pub ghost: PixelTexture,
+    pub goat: PixelTexture,
+    pub mouse: PixelTexture,
+    pub panda: PixelTexture,
+    pub penguin: PixelTexture,
+    pub skeleton: PixelTexture,
+    pub snake: PixelTexture,
+    pub unicorn: PixelTexture,
 }
 
 #[derive(geng::asset::Load)]

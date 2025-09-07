@@ -71,19 +71,72 @@ impl Map {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Character {
+    Ant,
     Bunny,
+    Cat,
+    Crab,
+    Dinosaur,
+    Dog,
+    Elephant,
+    Fishman,
     Fox,
+    Frog,
+    Ghost,
+    Goat,
+    Mouse,
+    Panda,
+    Penguin,
+    Skeleton,
+    Snake,
+    Unicorn,
 }
 
 impl Character {
     pub fn random() -> Self {
-        *[Self::Bunny, Self::Fox].choose(&mut thread_rng()).unwrap()
+        *[
+            Self::Ant,
+            Self::Bunny,
+            Self::Cat,
+            Self::Crab,
+            Self::Dinosaur,
+            Self::Dog,
+            Self::Elephant,
+            Self::Fishman,
+            Self::Fox,
+            Self::Frog,
+            Self::Ghost,
+            Self::Goat,
+            Self::Mouse,
+            Self::Panda,
+            Self::Penguin,
+            Self::Skeleton,
+            Self::Snake,
+            Self::Unicorn,
+        ]
+        .choose(&mut thread_rng())
+        .unwrap()
     }
 
     pub fn color(&self) -> Rgba<f32> {
         match self {
+            Character::Ant => Rgba::try_from("#6D767B").unwrap(),
             Character::Bunny => Rgba::try_from("#5590B4").unwrap(),
+            Character::Cat => Rgba::try_from("#C68B60").unwrap(),
+            Character::Crab => Rgba::try_from("#C68B60").unwrap(),
+            Character::Dinosaur => Rgba::try_from("#B158D3").unwrap(),
+            Character::Dog => Rgba::try_from("#C68B60").unwrap(),
+            Character::Elephant => Rgba::try_from("#6D767B").unwrap(),
+            Character::Fishman => Rgba::try_from("#474C80").unwrap(),
             Character::Fox => Rgba::try_from("#B03B59").unwrap(),
+            Character::Frog => Rgba::try_from("#6BB453").unwrap(),
+            Character::Ghost => Rgba::try_from("#6D767B").unwrap(),
+            Character::Goat => Rgba::try_from("#5590B4").unwrap(),
+            Character::Mouse => Rgba::try_from("#6D767B").unwrap(),
+            Character::Panda => Rgba::try_from("#B03B59").unwrap(),
+            Character::Penguin => Rgba::try_from("#C68B60").unwrap(),
+            Character::Skeleton => Rgba::try_from("#69469B").unwrap(),
+            Character::Snake => Rgba::try_from("#3C7253").unwrap(),
+            Character::Unicorn => Rgba::try_from("#6A2F56").unwrap(),
         }
     }
 }

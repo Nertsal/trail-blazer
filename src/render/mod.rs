@@ -218,8 +218,24 @@ impl GameRender {
 
 fn get_character_sprite(sprites: &CharacterSprites, character: Character) -> &PixelTexture {
     match character {
+        Character::Ant => &sprites.ant,
         Character::Bunny => &sprites.bunny,
+        Character::Cat => &sprites.cat,
+        Character::Crab => &sprites.crab,
+        Character::Dinosaur => &sprites.dinosaur,
+        Character::Dog => &sprites.dog,
+        Character::Elephant => &sprites.elephant,
+        Character::Fishman => &sprites.fishman,
         Character::Fox => &sprites.fox,
+        Character::Frog => &sprites.frog,
+        Character::Ghost => &sprites.ghost,
+        Character::Goat => &sprites.goat,
+        Character::Mouse => &sprites.mouse,
+        Character::Panda => &sprites.panda,
+        Character::Penguin => &sprites.penguin,
+        Character::Skeleton => &sprites.skeleton,
+        Character::Snake => &sprites.snake,
+        Character::Unicorn => &sprites.unicorn,
     }
 }
 
