@@ -99,5 +99,19 @@ impl GameRender {
                 .fit(pos, vec2(0.5, 0.5))
                 .draw(&model.camera, &self.geng, framebuffer);
         }
+
+        // Planned move
+        if let Some(player) = model.shared.players.get(&model.player_id) {
+            for &tile in &player.submitted_move {
+                let pos = map.tile_bounds(tile).as_f32();
+                self.geng.draw2d().circle(
+                    framebuffer,
+                    &model.camera,
+                    pos.center(),
+                    pos.width() / 4.0,
+                    player.character.color(),
+                );
+            }
+        }
     }
 }

@@ -60,6 +60,7 @@ impl SharedModel {
             if let Some(&pos) = player.submitted_move.last() {
                 player.pos = pos;
             }
+            player.submitted_move.clear();
         }
         self.phase = Phase::Planning {
             time_left: FTime::new(TIME_PER_PLAN),

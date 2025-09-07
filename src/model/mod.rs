@@ -81,8 +81,8 @@ impl Character {
 
     pub fn color(&self) -> Rgba<f32> {
         match self {
-            Character::Bunny => Rgba::try_from("#B03B59").unwrap(),
-            Character::Fox => Rgba::try_from("#5590B4").unwrap(),
+            Character::Bunny => Rgba::try_from("#5590B4").unwrap(),
+            Character::Fox => Rgba::try_from("#B03B59").unwrap(),
         }
     }
 }

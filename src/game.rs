@@ -64,7 +64,7 @@ impl Game {
             .model
             .shared
             .players
-            .values()
+            .values_mut()
             .find(|player| player.pos == self.cursor_grid_pos)
         {
             // Drag player
@@ -74,6 +74,7 @@ impl Game {
                         path: vec![player.pos],
                     },
                 });
+                player.submitted_move = vec![player.pos];
             }
         }
     }
@@ -82,6 +83,11 @@ impl Game {
         if let Some(drag) = self.drag.take() {
             match drag.target {
                 DragTarget::Player { path } => {
+                    let Some(player) = self.model.shared.players.get_mut(&self.model.player_id)
+                    else {
+                        return;
+                    };
+                    player.submitted_move = path.clone();
                     self.connection.send(ClientMessage::SubmitMove(path));
                 }
             }
@@ -104,7 +110,8 @@ impl Game {
         if let Some(drag) = &mut self.drag {
             match &mut drag.target {
                 DragTarget::Player { path } => {
-                    let Some(player) = self.model.shared.players.get(&self.model.player_id) else {
+                    let Some(player) = self.model.shared.players.get_mut(&self.model.player_id)
+                    else {
                         return;
                     };
                     if path
@@ -115,6 +122,7 @@ impl Game {
                     {
                         // Cancel last move
                         path.pop();
+                        player.submitted_move = path.clone();
                         self.connection
                             .send(ClientMessage::SubmitMove(path.clone()));
                     } else if path.len() as ICoord <= player.speed
@@ -124,6 +132,7 @@ impl Game {
                     {
                         // Add tile
                         path.push(self.cursor_grid_pos);
+                        player.submitted_move = path.clone();
                         self.connection
                             .send(ClientMessage::SubmitMove(path.clone()));
                     }
@@ -142,6 +151,12 @@ impl geng::State for Game {
         // Process server messages
         for message in self.connection.new_messages() {
             let message = message.unwrap();
+            if let ServerMessage::StartResolution(_) = message
+                && let Some(drag) = &self.drag
+                && let DragTarget::Player { .. } = &drag.target
+            {
+                self.drag = None;
+            }
             self.model.handle_message(message);
         }
 
