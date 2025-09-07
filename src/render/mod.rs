@@ -139,10 +139,12 @@ impl GameRender {
 
         // Players
         for player in model.shared.players.values() {
+            let color = player.character.color();
             let texture = get_character_sprite(&sprites.characters, player.character);
             let pos = map.tile_bounds(player.pos).as_f32();
             geng_utils::texture::DrawTexture::new(texture)
                 .fit(pos, vec2(0.5, 0.5))
+                .colored(color)
                 .draw(&model.camera, &self.geng, framebuffer);
         }
 
@@ -183,7 +185,7 @@ impl GameRender {
                 let pos = map.tile_bounds(pos).as_f32();
                 geng_utils::texture::DrawTexture::new(texture)
                     .fit(pos, vec2(0.5, 0.5))
-                    .colored(Rgba::try_from("#ffffff55").unwrap())
+                    .colored(Rgba::try_from("#393b42").unwrap())
                     .draw(&model.camera, &self.geng, framebuffer);
             }
         }
