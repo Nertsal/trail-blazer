@@ -14,6 +14,7 @@ pub struct ServerState {
     pub config: Config,
     pub clients: HashMap<ClientId, Client>,
     pub model: SharedModel,
+    pub queued_moves: HashMap<ClientId, Vec<vec2<ICoord>>>,
 }
 
 impl ServerState {
@@ -28,6 +29,7 @@ impl ServerState {
             config: Config {},
             clients: HashMap::new(),
             model: SharedModel::new(map),
+            queued_moves: HashMap::new(),
         }
     }
 
@@ -51,6 +53,7 @@ impl ServerState {
                 pos,
                 speed: 5,
                 submitted_move: vec![],
+                resolution_speed_left: 0,
             },
         );
         Setup {
@@ -64,6 +67,13 @@ impl ServerState {
         for event in self.model.update(delta_time) {
             match event {
                 GameEvent::StartResolution => {
+                    for player in self.model.players.values_mut() {
+                        player.submitted_move = self
+                            .queued_moves
+                            .get(&player.id)
+                            .cloned()
+                            .unwrap_or_default();
+                    }
                     self.model.start_resolution();
                     for client in self.clients.values_mut() {
                         client
@@ -88,12 +98,7 @@ impl ServerState {
                 client.sender.send(ServerMessage::Ping);
             }
             ClientMessage::SubmitMove(path) => {
-                if let Phase::Planning { .. } = self.model.phase
-                    && self.model.validate_path(client_id, &path)
-                    && let Some(player) = self.model.players.get_mut(&client_id)
-                {
-                    player.submitted_move = path;
-                }
+                self.queued_moves.insert(client_id, path);
             }
         }
     }

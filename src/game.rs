@@ -1,4 +1,9 @@
-use crate::{assets::*, interop::*, model::*, render::GameRender};
+use crate::{
+    assets::*,
+    interop::*,
+    model::{shared::Phase, *},
+    render::GameRender,
+};
 
 use geng::prelude::*;
 use geng_utils::conversions::*;
@@ -68,7 +73,9 @@ impl Game {
             .find(|player| player.pos == self.cursor_grid_pos)
         {
             // Drag player
-            if player.id == self.model.player_id {
+            if player.id == self.model.player_id
+                && let Phase::Planning { .. } = self.model.shared.phase
+            {
                 self.drag = Some(Drag {
                     target: DragTarget::Player {
                         path: vec![player.pos],
@@ -125,7 +132,7 @@ impl Game {
                         player.submitted_move = path.clone();
                         self.connection
                             .send(ClientMessage::SubmitMove(path.clone()));
-                    } else if path.len() as ICoord <= player.speed
+                    } else if path.len() <= player.speed
                         && !path.contains(&self.cursor_grid_pos)
                         && let Some(&last) = path.last()
                         && shared::are_adjacent(last, self.cursor_grid_pos)
