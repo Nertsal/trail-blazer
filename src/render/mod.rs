@@ -30,6 +30,12 @@ impl GameRender {
             .draw(&geng::PixelPerfectCamera, &self.geng, framebuffer);
 
         let map = &model.shared.map;
+        self.geng.draw2d().quad(
+            framebuffer,
+            &model.camera,
+            map.world_bounds().extend_symmetric(map.cell_size).as_f32(),
+            Rgba::try_from("#1A151F").unwrap(),
+        );
         {
             // Map outline
             // corners

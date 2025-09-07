@@ -22,6 +22,8 @@ pub struct Sprites {
     pub wall: PixelTexture,
     pub char_bunny: PixelTexture,
     pub char_fox: PixelTexture,
+    pub mushroom: PixelTexture,
+    pub base: PixelTexture,
 }
 
 impl Assets {
