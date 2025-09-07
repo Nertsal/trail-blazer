@@ -104,6 +104,9 @@ impl Game {
         if let Some(drag) = &mut self.drag {
             match &mut drag.target {
                 DragTarget::Player { path } => {
+                    let Some(player) = self.model.shared.players.get(&self.model.player_id) else {
+                        return;
+                    };
                     if path
                         .len()
                         .checked_sub(2)
@@ -114,10 +117,12 @@ impl Game {
                         path.pop();
                         self.connection
                             .send(ClientMessage::SubmitMove(path.clone()));
-                    } else if path.last() != Some(&self.cursor_grid_pos) {
+                    } else if path.len() as ICoord <= player.speed
+                        && !path.contains(&self.cursor_grid_pos)
+                        && let Some(&last) = path.last()
+                        && shared::are_adjacent(last, self.cursor_grid_pos)
+                    {
                         // Add tile
-                        // TODO: check max distance
-                        // TODO: check adjacency
                         path.push(self.cursor_grid_pos);
                         self.connection
                             .send(ClientMessage::SubmitMove(path.clone()));
