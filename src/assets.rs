@@ -5,6 +5,8 @@ use geng::prelude::*;
 #[derive(geng::asset::Load)]
 pub struct Assets {
     pub sprites: Sprites,
+    #[load(path = "dungeon-mode.ttf")]
+    pub font: Rc<geng::Font>,
 }
 
 #[derive(geng::asset::Load)]

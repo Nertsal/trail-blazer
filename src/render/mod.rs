@@ -1,6 +1,6 @@
 use crate::{
     assets::*,
-    model::{client::ClientModel, *},
+    model::{client::ClientModel, shared::Phase, *},
 };
 
 use geng::prelude::*;
@@ -112,6 +112,30 @@ impl GameRender {
                     player.character.color(),
                 );
             }
+        }
+
+        self.draw_game_ui(model, framebuffer);
+    }
+
+    pub fn draw_game_ui(&self, model: &ClientModel, framebuffer: &mut ugli::Framebuffer) {
+        if let Phase::Planning { time_left } = model.shared.phase {
+            // Planning timer
+            let map_bounds = model.shared.map.world_bounds().as_f32();
+            self.geng.draw2d().draw2d(
+                framebuffer,
+                &model.camera,
+                &draw2d::Text::unit(
+                    self.assets.font.clone(),
+                    format!("Planning: {:.1}s", time_left.as_f32().max(0.0)),
+                    Rgba::try_from("#E5BD85").unwrap(),
+                )
+                .transform(
+                    mat3::translate(vec2(
+                        map_bounds.center().x,
+                        map_bounds.max.y + model.shared.map.cell_size.y.as_f32() * 1.5,
+                    )) * mat3::scale_uniform(0.25),
+                ),
+            );
         }
     }
 }
