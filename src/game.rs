@@ -188,6 +188,6 @@ impl geng::State for Game {
             None,
             None,
         );
-        self.render.draw_game(&self.model, framebuffer);
+        self.render.draw_game(&mut self.model, framebuffer);
     }
 }

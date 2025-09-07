@@ -19,7 +19,7 @@ impl GameRender {
         }
     }
 
-    pub fn draw_game(&self, model: &ClientModel, framebuffer: &mut ugli::Framebuffer) {
+    pub fn draw_game(&self, model: &mut ClientModel, framebuffer: &mut ugli::Framebuffer) {
         let sprites = &self.assets.sprites;
 
         // Background
@@ -79,13 +79,21 @@ impl GameRender {
             draw.draw(&model.camera, &self.geng, framebuffer);
         }
         // Map tiles
+        let mut rng = thread_rng();
         for x in map.bounds.min.x..=map.bounds.max.x {
             for y in map.bounds.min.y..=map.bounds.max.y {
                 let pos = vec2(x, y);
                 let tile = if map.walls.contains(&pos) {
                     &sprites.wall
                 } else {
-                    &sprites.tile
+                    let variant = *model
+                        .tile_variants
+                        .entry(pos)
+                        .or_insert_with(|| rng.gen_range(0..sprites.tiles.len()));
+                    sprites
+                        .tiles
+                        .get(variant)
+                        .unwrap_or(sprites.tiles.first().unwrap())
                 };
                 let pos = map.tile_bounds(pos).as_f32();
                 geng_utils::texture::DrawTexture::new(tile)
@@ -128,9 +136,10 @@ impl GameRender {
 
         // Players
         for player in model.shared.players.values() {
+            let sprites = &sprites.characters;
             let texture = match player.character {
-                Character::Bunny => &sprites.char_bunny,
-                Character::Fox => &sprites.char_fox,
+                Character::Bunny => &sprites.bunny,
+                Character::Fox => &sprites.fox,
             };
             let pos = map.tile_bounds(player.pos).as_f32();
             geng_utils::texture::DrawTexture::new(texture)

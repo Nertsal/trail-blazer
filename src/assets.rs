@@ -18,12 +18,18 @@ pub struct Sprites {
     pub outline_corner_tr: PixelTexture,
     pub outline_straight_up: PixelTexture,
     pub outline_straight_right: PixelTexture,
-    pub tile: PixelTexture,
+    #[load(list = "0..=1")]
+    pub tiles: Vec<PixelTexture>,
     pub wall: PixelTexture,
-    pub char_bunny: PixelTexture,
-    pub char_fox: PixelTexture,
+    pub characters: CharacterSprites,
     pub mushroom: PixelTexture,
     pub base: PixelTexture,
+}
+
+#[derive(geng::asset::Load)]
+pub struct CharacterSprites {
+    pub bunny: PixelTexture,
+    pub fox: PixelTexture,
 }
 
 impl Assets {

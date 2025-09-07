@@ -5,8 +5,9 @@ use crate::interop::{ClientId, ClientMessage, ServerMessage};
 pub struct ClientModel {
     pub player_id: ClientId,
     pub messages: Vec<ClientMessage>,
-    pub shared: shared::SharedModel,
     pub camera: Camera2d,
+    pub shared: shared::SharedModel,
+    pub tile_variants: HashMap<vec2<ICoord>, usize>,
 }
 
 impl ClientModel {
@@ -25,6 +26,7 @@ impl ClientModel {
                 },
             },
 
+            tile_variants: HashMap::new(),
             shared: model,
         }
     }
