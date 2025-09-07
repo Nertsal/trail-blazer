@@ -129,6 +129,8 @@ impl Game {
                         && !path.contains(&self.cursor_grid_pos)
                         && let Some(&last) = path.last()
                         && shared::are_adjacent(last, self.cursor_grid_pos)
+                        && !self.model.shared.map.walls.contains(&self.cursor_grid_pos)
+                        && self.model.shared.map.is_in_bounds(self.cursor_grid_pos)
                     {
                         // Add tile
                         path.push(self.cursor_grid_pos);

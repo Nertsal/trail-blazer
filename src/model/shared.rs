@@ -80,9 +80,10 @@ impl SharedModel {
             return false; // Path does not start at player's position
         }
 
-        // Check adjacency and walls
-        for (from, to) in path.iter().tuple_windows() {
-            if self.map.walls.contains(to) || !are_adjacent(*from, *to) {
+        // Check adjacency, walls, and bounds
+        for (&from, &to) in path.iter().tuple_windows() {
+            if self.map.walls.contains(&to) || !are_adjacent(from, to) || !self.map.is_in_bounds(to)
+            {
                 return false;
             }
         }
