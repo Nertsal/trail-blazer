@@ -134,7 +134,9 @@ impl SharedModel {
 
             // Update cooldowns
             player.cooldown_sprint -= 1;
-            player.cooldown_teleport -= 1;
+            if !player.is_channeling {
+                player.cooldown_teleport -= 1;
+            }
         }
 
         self.turn_current += 1;

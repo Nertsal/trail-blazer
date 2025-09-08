@@ -220,6 +220,9 @@ impl Game {
         let Some(player) = self.model.shared.players.get_mut(&self.model.player_id) else {
             return;
         };
+        if player.cooldown_sprint > 0 {
+            return;
+        }
         match &mut player.submitted_move {
             PlayerMove::Normal { sprint, .. } => *sprint = !*sprint,
             _ => {
@@ -237,6 +240,9 @@ impl Game {
         let Some(player) = self.model.shared.players.get_mut(&self.model.player_id) else {
             return;
         };
+        if player.cooldown_teleport > 0 {
+            return;
+        }
         player.submitted_move = PlayerMove::TeleportChanneling;
         self.connection
             .send(ClientMessage::SubmitMove(player.submitted_move.clone()));

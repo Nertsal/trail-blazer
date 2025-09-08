@@ -251,10 +251,19 @@ impl GameRender {
             } else {
                 &self.assets.sprites.abilities.sprint
             };
+            let feedback = if player.cooldown_sprint <= 0 && ui.ability_sprint.hovered
+                || matches!(
+                    player.submitted_move,
+                    PlayerMove::Normal { sprint: true, .. }
+                ) {
+                ui.ability_sprint.position.width() * 0.1
+            } else {
+                0.0
+            };
             self.geng.draw2d().textured_quad(
                 framebuffer,
                 &geng::PixelPerfectCamera,
-                ui.ability_sprint.position,
+                ui.ability_sprint.position.extend_uniform(feedback),
                 texture,
                 Rgba::WHITE,
             );
@@ -264,10 +273,21 @@ impl GameRender {
             } else {
                 &self.assets.sprites.abilities.teleport
             };
+            let feedback = if player.cooldown_teleport <= 0 && ui.ability_teleport.hovered
+                || matches!(
+                    player.submitted_move,
+                    PlayerMove::TeleportChanneling | PlayerMove::TeleportActivate { .. }
+                )
+                || player.is_channeling
+            {
+                ui.ability_teleport.position.width() * 0.1
+            } else {
+                0.0
+            };
             self.geng.draw2d().textured_quad(
                 framebuffer,
                 &geng::PixelPerfectCamera,
-                ui.ability_teleport.position,
+                ui.ability_teleport.position.extend_uniform(feedback),
                 texture,
                 Rgba::WHITE,
             );
@@ -277,10 +297,17 @@ impl GameRender {
             } else {
                 &self.assets.sprites.abilities.throw
             };
+            let feedback = if player.mushrooms > 0 && ui.ability_throw.hovered
+                || matches!(player.submitted_move, PlayerMove::Throw { .. })
+            {
+                ui.ability_throw.position.width() * 0.1
+            } else {
+                0.0
+            };
             self.geng.draw2d().textured_quad(
                 framebuffer,
                 &geng::PixelPerfectCamera,
-                ui.ability_throw.position,
+                ui.ability_throw.position.extend_uniform(feedback),
                 texture,
                 Rgba::WHITE,
             );
