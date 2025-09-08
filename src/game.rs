@@ -353,6 +353,7 @@ impl geng::State for Game {
                 GameEvent::Score(..) => Some(&sounds.score),
                 GameEvent::Teleport => Some(&sounds.teleport),
                 GameEvent::MushroomThrow => Some(&sounds.throw_mushroom),
+                GameEvent::NextMove => Some(&sounds.walk),
                 _ => None,
             };
             if let Some(sfx) = sfx {

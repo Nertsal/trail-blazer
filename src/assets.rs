@@ -20,6 +20,7 @@ pub struct Shaders {
 pub struct Sounds {
     pub click: Rc<geng::Sound>,
     pub hover: Rc<geng::Sound>,
+    pub walk: Rc<geng::Sound>,
     pub gameover: Rc<geng::Sound>,
     pub gather: Rc<geng::Sound>,
     pub score: Rc<geng::Sound>,

@@ -16,6 +16,7 @@ pub enum GameEvent {
     StartResolution,
     FinishResolution,
     ResultsOver,
+    NextMove,
     MushroomPickup(vec2<ICoord>),
     MushroomsCollected(usize),
     PlayerStunned(ClientId, vec2<ICoord>),
@@ -296,6 +297,9 @@ impl SharedModel {
             }
         }
 
+        if !mushroom_moves.is_empty() || !player_moves.is_empty() {
+            events.push(GameEvent::NextMove);
+        }
         // if mushroom_moves.is_empty() && player_moves.is_empty() {
         //     return (events, false);
         // }
