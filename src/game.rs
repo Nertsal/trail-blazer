@@ -128,14 +128,19 @@ impl Game {
             }
         } else if let Some(player) = self.model.shared.players.get_mut(&self.model.player_id) {
             if player.is_channeling {
-                player.submitted_move = PlayerMove::TeleportActivate {
-                    teleport_to: self.cursor_grid_pos,
-                };
-                self.connection
-                    .send(ClientMessage::SubmitMove(player.submitted_move.clone()));
+                if !self.model.shared.map.walls.contains(&self.cursor_grid_pos)
+                    && self.model.shared.map.is_in_bounds(self.cursor_grid_pos)
+                    && shared::distance(player.pos, self.cursor_grid_pos) <= 3
+                {
+                    player.submitted_move = PlayerMove::TeleportActivate {
+                        teleport_to: self.cursor_grid_pos,
+                    };
+                    self.connection
+                        .send(ClientMessage::SubmitMove(player.submitted_move.clone()));
+                }
             } else if let PlayerMove::Throw { direction } = &mut player.submitted_move {
                 let new_dir = (self.cursor_grid_pos - player.pos).map(|x| x.clamp_abs(1));
-                if new_dir.x == 0 || new_dir.y == 0 {
+                if new_dir.x.abs() + new_dir.y.abs() == 1 {
                     *direction = new_dir;
                     self.connection
                         .send(ClientMessage::SubmitMove(player.submitted_move.clone()));
@@ -232,7 +237,7 @@ impl Game {
         let Some(player) = self.model.shared.players.get_mut(&self.model.player_id) else {
             return;
         };
-        if player.cooldown_sprint > 0 {
+        if player.cooldown_sprint > 0 || player.is_channeling {
             return;
         }
         match &mut player.submitted_move {
