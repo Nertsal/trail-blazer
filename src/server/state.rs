@@ -34,21 +34,23 @@ impl ServerState {
     }
 
     pub fn new_player(&mut self, player_id: ClientId) -> Setup {
-        // NOTE: can infinite loop
-        let pos = loop {
+        let mut position = None;
+        for _ in 0..100 {
             let pos = self.model.map.random_position();
             if self.model.map.walls.contains(&pos)
                 || self.model.players.values().any(|player| player.pos == pos)
             {
                 continue;
             } else {
-                break pos;
+                position = Some(pos);
             }
-        };
-        self.model.players.insert(
-            player_id,
-            Player::new(player_id, PlayerCustomization::random(), pos),
-        );
+        }
+        if let Some(position) = position {
+            self.model.players.insert(
+                player_id,
+                Player::new(player_id, PlayerCustomization::random(), position),
+            );
+        }
         Setup {
             player_id,
             model: self.model.clone(),
@@ -57,40 +59,54 @@ impl ServerState {
 
     pub fn tick(&mut self) {
         let delta_time = FTime::new(ServerState::TICKS_PER_SECOND.recip());
-        for event in self.model.update(delta_time) {
-            match event {
-                GameEvent::StartResolution => {
-                    for player in self.model.players.values_mut() {
-                        player.submitted_move = self
-                            .queued_moves
-                            .get(&player.id)
-                            .cloned()
-                            .unwrap_or_default();
+        if self.clients.is_empty() {
+            if self.model.turn_current != 0 {
+                self.model.new_game();
+            }
+        } else {
+            for event in self.model.update(delta_time) {
+                match event {
+                    GameEvent::StartResolution => {
+                        for player in self.model.players.values_mut() {
+                            player.submitted_move = self
+                                .queued_moves
+                                .get(&player.id)
+                                .cloned()
+                                .unwrap_or_default();
+                        }
+                        self.model.start_resolution();
+                        for client in self.clients.values_mut() {
+                            client
+                                .sender
+                                .send(ServerMessage::StartResolution(self.model.clone()));
+                        }
                     }
-                    self.model.start_resolution();
-                    for client in self.clients.values_mut() {
-                        client
-                            .sender
-                            .send(ServerMessage::StartResolution(self.model.clone()));
-                    }
-                }
-                GameEvent::FinishResolution => {
-                    self.model.finish_resolution();
+                    GameEvent::FinishResolution => {
+                        self.model.finish_resolution();
 
-                    // Spawn mushrooms
-                    let mushrooms = self.model.mushrooms.len();
-                    let target = if thread_rng().gen_bool(0.2) { 2 } else { 1 };
-                    for _ in mushrooms..target {
-                        self.model.spawn_mushroom();
-                    }
+                        // Spawn mushrooms
+                        let mushrooms = self.model.mushrooms.len();
+                        let target = if thread_rng().gen_bool(0.2) { 2 } else { 1 };
+                        for _ in mushrooms..target {
+                            self.model.spawn_mushroom();
+                        }
 
-                    for client in self.clients.values_mut() {
-                        client
-                            .sender
-                            .send(ServerMessage::FinishResolution(self.model.clone()));
+                        for client in self.clients.values_mut() {
+                            client
+                                .sender
+                                .send(ServerMessage::FinishResolution(self.model.clone()));
+                        }
                     }
+                    GameEvent::ResultsOver => {
+                        self.model.new_game();
+                        for client in self.clients.values_mut() {
+                            client
+                                .sender
+                                .send(ServerMessage::StartResolution(self.model.clone()));
+                        }
+                    }
+                    _ => {}
                 }
-                _ => {}
             }
         }
     }

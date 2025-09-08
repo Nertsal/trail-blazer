@@ -208,8 +208,6 @@ pub struct Player {
     pub submitted_move: PlayerMove,
     /// Currently carrying mushrooms.
     pub mushrooms: usize,
-    /// Total number of retrieved mushrooms.
-    pub collected_mushrooms: usize,
     pub stunned_duration: Option<Turns>,
     /// Speed at the start of resolution phase.
     pub resolution_speed_max: usize,
@@ -231,7 +229,6 @@ impl Player {
             max_speed: 5,
             submitted_move: PlayerMove::default(),
             mushrooms: 0,
-            collected_mushrooms: 0,
             stunned_duration: None,
             resolution_speed_max: 0,
             resolution_speed_left: 0,

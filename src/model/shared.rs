@@ -9,11 +9,13 @@ pub const TELEPORT_COOLDOWN: Turns = 3;
 pub const TELEPORT_SPEED: usize = 5;
 pub const THROW_SPEED: usize = 5;
 pub const SCORE_PER_MUSHROOM: Score = 3;
+pub const RESULTS_SCREEN_TIME: f32 = 10.0;
 
 #[derive(Debug, Clone)]
 pub enum GameEvent {
     StartResolution,
     FinishResolution,
+    ResultsOver,
     MushroomPickup(vec2<ICoord>),
     MushroomsCollected(usize),
     PlayerStunned(ClientId, vec2<ICoord>),
@@ -23,6 +25,7 @@ pub enum GameEvent {
 pub enum Phase {
     Planning { time_left: FTime },
     Resolution { next_move_in: FTime },
+    Results { time_left: FTime },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -59,7 +62,7 @@ impl SharedModel {
             mushrooms: Vec::new(),
             trails: Vec::new(),
 
-            turns_max: 30,
+            turns_max: 2,
             map,
         };
         model.spawn_mushroom();
@@ -90,6 +93,12 @@ impl SharedModel {
                     } else {
                         events.push(GameEvent::FinishResolution);
                     }
+                }
+            }
+            Phase::Results { time_left } => {
+                *time_left -= delta_time;
+                if *time_left <= FTime::ZERO {
+                    events.push(GameEvent::ResultsOver);
                 }
             }
         }
@@ -141,10 +150,28 @@ impl SharedModel {
             }
         }
 
-        self.turn_current += 1;
+        if self.turn_current >= self.turns_max {
+            self.phase = Phase::Results {
+                time_left: FTime::new(RESULTS_SCREEN_TIME),
+            }
+        } else {
+            self.turn_current += 1;
+            self.phase = Phase::Planning {
+                time_left: FTime::new(TIME_PER_PLAN),
+            }
+        }
+    }
+
+    pub fn new_game(&mut self) {
+        self.mushrooms.clear();
+        self.trails.clear();
+        self.turn_current = 0;
+        for player in self.players.values_mut() {
+            *player = Player::new(player.id, player.customization.clone(), player.pos);
+        }
         self.phase = Phase::Planning {
             time_left: FTime::new(TIME_PER_PLAN),
-        }
+        };
     }
 
     pub fn start_resolution(&mut self) {
@@ -324,7 +351,6 @@ impl SharedModel {
 
                         if self.base == target {
                             // Submit resources to base
-                            player.collected_mushrooms += player.mushrooms;
                             player.score += SCORE_PER_MUSHROOM * player.mushrooms as Score;
                             events.push(GameEvent::MushroomsCollected(player.mushrooms));
                             player.mushrooms = 0;
