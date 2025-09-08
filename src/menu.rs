@@ -196,22 +196,33 @@ impl geng::State for MainMenu {
             None,
         );
 
-        geng_utils::texture::DrawTexture::new(&self.assets.sprites.menu_background)
+        let sprites = &self.assets.sprites;
+        let button_variant = |state: &WidgetState, normal, hover, press| {
+            if state.mouse_left.pressed.is_some() {
+                press
+            } else if state.hovered {
+                hover
+            } else {
+                normal
+            }
+        };
+
+        geng_utils::texture::DrawTexture::new(&sprites.menu_background)
             .fit_screen(vec2(0.5, 0.5), framebuffer)
             .draw(&geng::PixelPerfectCamera, &self.geng, framebuffer);
 
-        geng_utils::texture::DrawTexture::new(&self.assets.sprites.character_panel)
+        geng_utils::texture::DrawTexture::new(&sprites.character_panel)
             .fit(self.ui.character.position, vec2(0.5, 0.5))
             .draw(&geng::PixelPerfectCamera, &self.geng, framebuffer);
         geng_utils::texture::DrawTexture::new(crate::render::get_character_sprite(
-            &self.assets.sprites.characters,
+            &sprites.characters,
             self.characters[self.character_i],
         ))
         .fit(self.ui.character.position, vec2(0.5, 0.5))
         .colored(self.colors[self.color_i])
         .draw(&geng::PixelPerfectCamera, &self.geng, framebuffer);
 
-        geng_utils::texture::DrawTexture::new(&self.assets.sprites.name_panel)
+        geng_utils::texture::DrawTexture::new(&sprites.name_panel)
             .fit(self.ui.name.position, vec2(0.5, 0.5))
             .draw(&geng::PixelPerfectCamera, &self.geng, framebuffer);
         self.geng.draw2d().draw2d(
@@ -234,10 +245,22 @@ impl geng::State for MainMenu {
             ),
         );
 
-        geng_utils::texture::DrawTexture::new(&self.assets.sprites.button_prev)
+        let texture = button_variant(
+            &self.ui.skin_prev,
+            &sprites.button_prev,
+            &sprites.button_prev_hover,
+            &sprites.button_prev_press,
+        );
+        geng_utils::texture::DrawTexture::new(texture)
             .fit(self.ui.skin_prev.position, vec2(0.5, 0.5))
             .draw(&geng::PixelPerfectCamera, &self.geng, framebuffer);
-        geng_utils::texture::DrawTexture::new(&self.assets.sprites.button_next)
+        let texture = button_variant(
+            &self.ui.skin_next,
+            &sprites.button_next,
+            &sprites.button_next_hover,
+            &sprites.button_next_press,
+        );
+        geng_utils::texture::DrawTexture::new(texture)
             .fit(self.ui.skin_next.position, vec2(0.5, 0.5))
             .draw(&geng::PixelPerfectCamera, &self.geng, framebuffer);
         self.geng.draw2d().draw2d(
@@ -251,10 +274,22 @@ impl geng::State for MainMenu {
             .fit_into(self.ui.skin_text.position),
         );
 
-        geng_utils::texture::DrawTexture::new(&self.assets.sprites.button_prev)
+        let texture = button_variant(
+            &self.ui.color_prev,
+            &sprites.button_prev,
+            &sprites.button_prev_hover,
+            &sprites.button_prev_press,
+        );
+        geng_utils::texture::DrawTexture::new(texture)
             .fit(self.ui.color_prev.position, vec2(0.5, 0.5))
             .draw(&geng::PixelPerfectCamera, &self.geng, framebuffer);
-        geng_utils::texture::DrawTexture::new(&self.assets.sprites.button_next)
+        let texture = button_variant(
+            &self.ui.color_next,
+            &sprites.button_next,
+            &sprites.button_next_hover,
+            &sprites.button_next_press,
+        );
+        geng_utils::texture::DrawTexture::new(texture)
             .fit(self.ui.color_next.position, vec2(0.5, 0.5))
             .draw(&geng::PixelPerfectCamera, &self.geng, framebuffer);
         self.geng.draw2d().draw2d(
@@ -268,7 +303,13 @@ impl geng::State for MainMenu {
             .fit_into(self.ui.color_text.position),
         );
 
-        geng_utils::texture::DrawTexture::new(&self.assets.sprites.join)
+        let texture = button_variant(
+            &self.ui.join,
+            &sprites.join,
+            &sprites.join_hover,
+            &sprites.join_press,
+        );
+        geng_utils::texture::DrawTexture::new(texture)
             .fit(self.ui.join.position, vec2(0.5, 0.5))
             .draw(&geng::PixelPerfectCamera, &self.geng, framebuffer);
 

@@ -52,10 +52,16 @@ pub struct Sprites {
     pub score_panel: PixelTexture,
     pub menu_background: PixelTexture,
     pub join: PixelTexture,
+    pub join_hover: PixelTexture,
+    pub join_press: PixelTexture,
     pub character_panel: PixelTexture,
     pub name_panel: PixelTexture,
     pub button_prev: PixelTexture,
+    pub button_prev_hover: PixelTexture,
+    pub button_prev_press: PixelTexture,
     pub button_next: PixelTexture,
+    pub button_next_hover: PixelTexture,
+    pub button_next_press: PixelTexture,
 }
 
 #[derive(geng::asset::Load)]
