@@ -282,15 +282,15 @@ impl SharedModel {
                     }
                 }
                 &PlayerMove::Throw { direction } => {
-                    if player.resolution_speed_left == player.resolution_speed_max {
+                    if player.resolution_speed_left == resolving_speed {
                         // Throw on the first move
-                        player.mushrooms -= 1;
-                        player.resolution_speed_left = 0;
                         self.mushrooms.push(Mushroom {
                             position: player.pos + direction,
                             direction,
-                            speed_left: THROW_SPEED.saturating_sub(1),
+                            speed_left: player.resolution_speed_left.saturating_sub(1),
                         });
+                        player.mushrooms -= 1;
+                        player.resolution_speed_left = 0;
                         events.push(GameEvent::MushroomThrow);
                     }
                 }
@@ -313,8 +313,18 @@ impl SharedModel {
                     };
                     if let Some(player) = self.players.values().find(|player| player.pos == target)
                     {
+                        // Hit player
                         mushroom.speed_left = 0;
-                        events.extend(self.stun_player(player.id, 1));
+                        let push_to = player.pos + mushroom.direction;
+                        let player_id = player.id;
+                        if self.map.is_in_bounds(push_to)
+                            && !self.map.walls.contains(&push_to)
+                            && !self.players.values().any(|player| player.pos == push_to)
+                            && let Some(player) = self.players.get_mut(&player_id)
+                        {
+                            player.pos = push_to;
+                        }
+                        events.extend(self.stun_player(player_id, 1));
                     } else if self.map.walls.contains(&target) || !self.map.is_in_bounds(target) {
                         mushroom.speed_left = 0;
                     } else {
