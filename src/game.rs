@@ -243,7 +243,16 @@ impl Game {
         if player.cooldown_teleport > 0 {
             return;
         }
-        player.submitted_move = PlayerMove::TeleportChanneling;
+        match player.submitted_move {
+            PlayerMove::TeleportChanneling | PlayerMove::TeleportActivate { .. } => {
+                player.submitted_move = PlayerMove::default()
+            }
+            _ => {
+                if !player.is_channeling {
+                    player.submitted_move = PlayerMove::TeleportChanneling;
+                }
+            }
+        };
         self.connection
             .send(ClientMessage::SubmitMove(player.submitted_move.clone()));
     }
@@ -252,8 +261,11 @@ impl Game {
         let Some(player) = self.model.shared.players.get_mut(&self.model.player_id) else {
             return;
         };
-        player.submitted_move = PlayerMove::Throw {
-            direction: vec2(1, 0),
+        player.submitted_move = match player.submitted_move {
+            PlayerMove::Throw { .. } => PlayerMove::default(),
+            _ => PlayerMove::Throw {
+                direction: vec2(1, 0),
+            },
         };
         self.connection
             .send(ClientMessage::SubmitMove(player.submitted_move.clone()));
