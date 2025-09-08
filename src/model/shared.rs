@@ -253,57 +253,7 @@ impl SharedModel {
                 .push(mushroom_i);
         }
 
-        let mut player_moves: HashMap<vec2<ICoord>, Vec<ClientId>> = HashMap::new();
-        for player in self.players.values_mut() {
-            match &player.submitted_move {
-                PlayerMove::Normal { path, .. } => {
-                    if player.resolution_speed_left == resolving_speed
-                        && let Some(&pos) =
-                            path.get(1 + player.resolution_speed_max - player.resolution_speed_left)
-                    {
-                        player_moves.entry(pos).or_default().push(player.id);
-                    }
-                }
-                PlayerMove::TeleportChanneling => {
-                    if player.resolution_speed_left == player.resolution_speed_max {
-                        player.resolution_speed_left = 0;
-                        player.is_channeling = true;
-                    }
-                }
-                PlayerMove::TeleportActivate { teleport_to } => {
-                    if player.resolution_speed_left == player.resolution_speed_max {
-                        // Teleport on the first move
-                        player.resolution_speed_left = 0;
-                        player_moves
-                            .entry(*teleport_to)
-                            .or_default()
-                            .push(player.id);
-                        events.push(GameEvent::Teleport);
-                    }
-                }
-                &PlayerMove::Throw { direction } => {
-                    if player.resolution_speed_left == resolving_speed {
-                        // Throw on the first move
-                        self.mushrooms.push(Mushroom {
-                            position: player.pos + direction,
-                            direction,
-                            speed_left: player.resolution_speed_left.saturating_sub(1),
-                        });
-                        player.mushrooms -= 1;
-                        player.resolution_speed_left = 0;
-                        events.push(GameEvent::MushroomThrow);
-                    }
-                }
-            }
-        }
-
-        if !mushroom_moves.is_empty() || !player_moves.is_empty() {
-            events.push(GameEvent::NextMove);
-        }
-        // if mushroom_moves.is_empty() && player_moves.is_empty() {
-        //     return (events, false);
-        // }
-
+        let mushroom_moves_any = !mushroom_moves.is_empty();
         for (target, mushrooms) in mushroom_moves {
             if mushrooms.len() <= 1 {
                 for i in mushrooms {
@@ -342,31 +292,98 @@ impl SharedModel {
             }
         }
 
+        let mut player_moves: HashMap<vec2<ICoord>, Vec<ClientId>> = HashMap::new();
+        for player_id in self.players.keys().cloned().collect::<Vec<_>>() {
+            let Some(player) = self.players.get_mut(&player_id) else {
+                continue;
+            };
+            match &player.submitted_move {
+                PlayerMove::Normal { path, .. } => {
+                    if player.resolution_speed_left == resolving_speed
+                        && let Some(&pos) =
+                            path.get(1 + player.resolution_speed_max - player.resolution_speed_left)
+                    {
+                        player_moves.entry(pos).or_default().push(player.id);
+                    }
+                }
+                PlayerMove::TeleportChanneling => {
+                    if player.resolution_speed_left == player.resolution_speed_max {
+                        player.resolution_speed_left = 0;
+                        player.is_channeling = true;
+                    }
+                }
+                PlayerMove::TeleportActivate { teleport_to } => {
+                    if player.resolution_speed_left == player.resolution_speed_max {
+                        // Teleport on the first move
+                        player.resolution_speed_left = 0;
+                        player_moves
+                            .entry(*teleport_to)
+                            .or_default()
+                            .push(player.id);
+                        events.push(GameEvent::Teleport);
+                    }
+                }
+                &PlayerMove::Throw { direction } => {
+                    if player.resolution_speed_left == resolving_speed {
+                        // Throw on the first move
+                        let position = player.pos + direction;
+                        self.mushrooms.push(Mushroom {
+                            position,
+                            direction,
+                            speed_left: player.resolution_speed_left.saturating_sub(1),
+                        });
+                        player.mushrooms -= 1;
+                        player.resolution_speed_left = 0;
+                        events.push(GameEvent::MushroomThrow);
+                        if let Some(player_id) = self
+                            .players
+                            .values()
+                            .find(|player| player.pos == position)
+                            .map(|player| player.id)
+                        {
+                            events.extend(self.stun_player(player_id, 1));
+                        }
+                    }
+                }
+            }
+        }
+
+        if mushroom_moves_any || !player_moves.is_empty() {
+            events.push(GameEvent::NextMove);
+        }
+
         // Check for bounces (multiple players moving into the same tile)
         for (target, players) in player_moves {
             if players.len() <= 1 {
                 // Just move the player - check for other collisions
-                for player in players {
+                for player_id in players {
                     // Check collisions
                     if self.players.values().any(|player| player.pos == target)
                         || self.trails.iter().any(|trail| trail.pos == target)
                     {
-                        events.extend(self.stun_player(player, 1));
+                        events.extend(self.stun_player(player_id, 1));
                         continue;
                     }
 
                     // Move
-                    if let Some(player) = self.players.get_mut(&player) {
-                        if let Some(shroom_i) = self
+                    if let Some(player) = self.players.get_mut(&player_id) {
+                        if let Some((shroom_i, shroom)) = self
                             .mushrooms
                             .iter()
-                            .position(|shroom| shroom.position == target)
+                            .enumerate()
+                            .find(|(_, shroom)| shroom.position == target)
                         {
                             // Collect mushroom
                             player.mushrooms += 1;
-                            self.mushrooms.swap_remove(shroom_i);
                             events.push(GameEvent::MushroomPickup(target));
+                            if shroom.speed_left > 0 {
+                                // Get hit
+                                events.extend(self.stun_player(player_id, 1));
+                            }
+                            self.mushrooms.swap_remove(shroom_i);
                         }
+
+                        let player = self.players.get_mut(&player_id).unwrap();
 
                         if self.base == target {
                             // Submit resources to base
