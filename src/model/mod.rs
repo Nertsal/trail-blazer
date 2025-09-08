@@ -182,10 +182,27 @@ impl Default for PlayerMove {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlayerCustomization {
+    pub name: String,
+    pub character: Character,
+    pub color: Rgba<f32>,
+}
+
+impl PlayerCustomization {
+    pub fn random() -> Self {
+        Self {
+            name: "".into(),
+            character: Character::random(),
+            color: Rgba::try_from("#6d767b").unwrap(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Player {
     pub id: ClientId,
     pub score: Score,
-    pub character: Character,
+    pub customization: PlayerCustomization,
     pub pos: vec2<ICoord>,
     pub max_speed: usize,
     pub submitted_move: PlayerMove,
@@ -205,11 +222,11 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn new(id: ClientId, character: Character, pos: vec2<ICoord>) -> Self {
+    pub fn new(id: ClientId, customization: PlayerCustomization, pos: vec2<ICoord>) -> Self {
         Self {
             id,
             score: 0,
-            character,
+            customization,
             pos,
             max_speed: 5,
             submitted_move: PlayerMove::default(),

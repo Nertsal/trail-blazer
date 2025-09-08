@@ -17,6 +17,7 @@ pub enum ServerMessage {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ClientMessage {
     Pong,
+    SetCustomization(PlayerCustomization),
     SubmitMove(PlayerMove),
 }
 

@@ -45,9 +45,10 @@ impl ServerState {
                 break pos;
             }
         };
-        self.model
-            .players
-            .insert(player_id, Player::new(player_id, Character::random(), pos));
+        self.model.players.insert(
+            player_id,
+            Player::new(player_id, PlayerCustomization::random(), pos),
+        );
         Setup {
             player_id,
             model: self.model.clone(),
@@ -105,6 +106,12 @@ impl ServerState {
                 //     state.timer.elapsed().as_secs_f64() as f32
                 // ));
                 client.sender.send(ServerMessage::Ping);
+            }
+            ClientMessage::SetCustomization(mut customization) => {
+                if let Some(player) = self.model.players.get_mut(&client_id) {
+                    customization.name = rustrict::Censor::from_str(&customization.name).collect();
+                    player.customization = customization;
+                }
             }
             ClientMessage::SubmitMove(mov) => {
                 self.queued_moves.insert(client_id, mov);

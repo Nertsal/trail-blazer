@@ -132,7 +132,7 @@ impl GameRender {
                 .shared
                 .players
                 .get(&trail.player)
-                .map(|player| player.character.color())
+                .map(|player| player.customization.color)
                 .unwrap_or(Rgba::MAGENTA);
 
             let (texture, rotation, flip) = get_trail_render(&sprites.trail, trail);
@@ -149,8 +149,8 @@ impl GameRender {
 
         // Players
         for player in model.shared.players.values() {
-            let color = player.character.color();
-            let texture = get_character_sprite(&sprites.characters, player.character);
+            let color = player.customization.color;
+            let texture = get_character_sprite(&sprites.characters, player.customization.character);
             let player_pos = map.tile_bounds(player.pos).as_f32();
             geng_utils::texture::DrawTexture::new(texture)
                 .fit(player_pos, vec2(0.5, 0.5))
@@ -262,7 +262,7 @@ impl GameRender {
             {
                 let texture = match player.submitted_move {
                     PlayerMove::Throw { .. } => &sprites.mushroom,
-                    _ => get_character_sprite(&sprites.characters, player.character),
+                    _ => get_character_sprite(&sprites.characters, player.customization.character),
                 };
                 let pos = map.tile_bounds(pos).as_f32();
                 geng_utils::texture::DrawTexture::new(texture)
@@ -546,8 +546,9 @@ impl GameRender {
         );
         let score_height = score_panel.height() / 50.0;
         let character_height = score_panel.height() / 15.0;
+        let name_height = score_panel.height() / 50.0;
         let spacing = score_panel.height() / 25.0;
-        let total_height = score_height + character_height + spacing;
+        let total_height = score_height + character_height + name_height + spacing;
         for (i, player) in model
             .shared
             .players
@@ -556,7 +557,7 @@ impl GameRender {
             .enumerate()
         {
             let top = top + vec2(0.0, -total_height * i as f32);
-            let color = player.character.color();
+            let color = player.customization.color;
             self.geng.draw2d().draw2d(
                 framebuffer,
                 &geng::PixelPerfectCamera,
@@ -566,7 +567,7 @@ impl GameRender {
             );
             geng_utils::texture::DrawTexture::new(get_character_sprite(
                 &self.assets.sprites.characters,
-                player.character,
+                player.customization.character,
             ))
             .fit_height(
                 Aabb2::point(top - vec2(0.0, score_height)).extend_down(character_height),
@@ -574,6 +575,15 @@ impl GameRender {
             )
             .colored(color)
             .draw(&geng::PixelPerfectCamera, &self.geng, framebuffer);
+            let name = Aabb2::point(top - vec2(0.0, score_height + character_height))
+                .extend_down(name_height)
+                .extend_symmetric(vec2(score_panel.width(), 0.0) / 2.0);
+            self.geng.draw2d().draw2d(
+                framebuffer,
+                &geng::PixelPerfectCamera,
+                &draw2d::Text::unit(self.assets.font.clone(), &player.customization.name, color)
+                    .fit_into(name),
+            );
         }
     }
 }

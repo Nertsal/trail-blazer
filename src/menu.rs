@@ -134,9 +134,14 @@ impl geng::State for MainMenu {
                 let geng = self.geng.clone();
                 let assets = self.assets.clone();
                 let connect = self.connect.clone();
+                let customization = crate::model::PlayerCustomization {
+                    name: self.name.clone(),
+                    character: self.characters[self.character_i],
+                    color: self.colors[self.color_i],
+                };
                 async move {
                     let connection = geng::net::client::connect(&connect.unwrap()).await.unwrap();
-                    crate::game::Game::new(&geng, &assets, connection).await
+                    crate::game::Game::new(&geng, &assets, connection, customization).await
                 }
             };
             let state = {

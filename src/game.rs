@@ -41,7 +41,13 @@ pub enum DragTarget {
 }
 
 impl Game {
-    pub async fn new(geng: &Geng, assets: &Rc<Assets>, mut connection: ClientConnection) -> Self {
+    pub async fn new(
+        geng: &Geng,
+        assets: &Rc<Assets>,
+        mut connection: ClientConnection,
+        customization: PlayerCustomization,
+    ) -> Self {
+        connection.send(ClientMessage::SetCustomization(customization.clone()));
         let ServerMessage::Setup(setup) = connection.next().await.unwrap().unwrap() else {
             unreachable!()
         };
