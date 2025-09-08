@@ -25,6 +25,8 @@ pub enum Phase {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Mushroom {
     pub position: vec2<ICoord>,
+    pub direction: vec2<ICoord>,
+    pub speed_left: usize,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -109,7 +111,11 @@ impl SharedModel {
         }
 
         let Some(position) = position else { return };
-        self.mushrooms.push(Mushroom { position });
+        self.mushrooms.push(Mushroom {
+            position,
+            direction: vec2::ZERO,
+            speed_left: 0,
+        });
     }
 
     pub fn finish_resolution(&mut self) {
@@ -189,13 +195,26 @@ impl SharedModel {
             .players
             .values()
             .map(|player| player.resolution_speed_left)
+            .chain(self.mushrooms.iter().map(|mushroom| mushroom.speed_left))
             .max()
             .unwrap_or(0);
         if resolving_speed == 0 {
             return (events, false);
         }
 
-        let mut target_moves: HashMap<vec2<ICoord>, Vec<ClientId>> = HashMap::new();
+        // Mushroom moves
+        let mut mushroom_moves: HashMap<vec2<ICoord>, Vec<usize>> = HashMap::new();
+        for (mushroom_i, mushroom) in self.mushrooms.iter_mut().enumerate() {
+            if mushroom.speed_left != resolving_speed {
+                continue;
+            }
+            mushroom_moves
+                .entry(mushroom.position + mushroom.direction)
+                .or_default()
+                .push(mushroom_i);
+        }
+
+        let mut player_moves: HashMap<vec2<ICoord>, Vec<ClientId>> = HashMap::new();
         for player in self.players.values_mut() {
             match &player.submitted_move {
                 PlayerMove::Normal { path, .. } => {
@@ -203,33 +222,74 @@ impl SharedModel {
                         && let Some(&pos) =
                             path.get(1 + player.resolution_speed_max - player.resolution_speed_left)
                     {
-                        target_moves.entry(pos).or_default().push(player.id);
+                        player_moves.entry(pos).or_default().push(player.id);
                     }
                 }
                 PlayerMove::TeleportChanneling => {
                     if player.resolution_speed_left == player.resolution_speed_max {
+                        player.resolution_speed_left = 0;
                         player.is_channeling = true;
                     }
                 }
                 PlayerMove::TeleportActivate { teleport_to } => {
                     if player.resolution_speed_left == player.resolution_speed_max {
                         // Teleport on the first move
-                        target_moves
+                        player.resolution_speed_left = 0;
+                        player_moves
                             .entry(*teleport_to)
                             .or_default()
                             .push(player.id);
                     }
                 }
-                PlayerMove::Throw { direction } => {}
+                &PlayerMove::Throw { direction } => {
+                    if player.resolution_speed_left == player.resolution_speed_max {
+                        // Throw on the first move
+                        player.mushrooms -= 1;
+                        player.resolution_speed_left = 0;
+                        self.mushrooms.push(Mushroom {
+                            position: player.pos + direction,
+                            direction,
+                            speed_left: THROW_SPEED.saturating_sub(1),
+                        });
+                    }
+                }
             }
         }
 
-        if target_moves.is_empty() {
-            return (events, false);
+        // if mushroom_moves.is_empty() && player_moves.is_empty() {
+        //     return (events, false);
+        // }
+
+        for (target, mushrooms) in mushroom_moves {
+            if mushrooms.len() <= 1 {
+                for i in mushrooms {
+                    // Check collisions
+                    let Some(mushroom) = self.mushrooms.get_mut(i) else {
+                        continue;
+                    };
+                    if let Some(player) = self.players.values().find(|player| player.pos == target)
+                    {
+                        mushroom.speed_left = 0;
+                        self.stun_player(player.id, 1);
+                    } else if self.map.walls.contains(&target) || !self.map.is_in_bounds(target) {
+                        mushroom.speed_left = 0;
+                    } else {
+                        mushroom.position = target;
+                        mushroom.speed_left -= 1;
+                    }
+                }
+            } else {
+                // Bounce mushrooms
+                for i in mushrooms {
+                    if let Some(mushroom) = self.mushrooms.get_mut(i) {
+                        mushroom.speed_left = 0;
+                    }
+                }
+            }
         }
 
         // Check for bounces (multiple players moving into the same tile)
-        for (target, players) in target_moves {
+        for (target, players) in player_moves {
             if players.len() <= 1 {
                 // Just move the player - check for other collisions
                 for player in players {
@@ -274,7 +334,8 @@ impl SharedModel {
                             });
                         }
                         player.pos = target;
-                        player.resolution_speed_left -= 1;
+                        player.resolution_speed_left =
+                            player.resolution_speed_left.saturating_sub(1);
                     }
                 }
             } else {
@@ -311,6 +372,8 @@ impl SharedModel {
             player.mushrooms -= 1;
             self.mushrooms.push(Mushroom {
                 position: start_pos,
+                direction: vec2::ZERO,
+                speed_left: 0,
             });
         }
 
@@ -325,11 +388,14 @@ impl SharedModel {
         match player_move {
             PlayerMove::Normal { path, sprint } => self.validate_path(player_id, path, *sprint),
             PlayerMove::TeleportChanneling => player.cooldown_teleport <= 0,
-            PlayerMove::TeleportActivate { teleport_to } => {
-                player.is_channeling && distance(player.pos, *teleport_to) <= 3
+            &PlayerMove::TeleportActivate { teleport_to } => {
+                player.is_channeling
+                    && distance(player.pos, teleport_to) <= 3
+                    && self.map.is_in_bounds(teleport_to)
+                    && !self.map.walls.contains(&teleport_to)
             }
             PlayerMove::Throw { direction } => {
-                player.mushrooms > 0 && (direction.x == 0 || direction.y == 0)
+                player.mushrooms > 0 && direction.x.abs() + direction.y.abs() == 1
             }
         }
     }

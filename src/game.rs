@@ -249,6 +249,8 @@ impl Game {
         player.submitted_move = PlayerMove::Throw {
             direction: vec2(1, 0),
         };
+        self.connection
+            .send(ClientMessage::SubmitMove(player.submitted_move.clone()));
     }
 }
 
@@ -258,15 +260,11 @@ impl geng::State for Game {
     }
 
     fn update(&mut self, delta_time: f64) {
+        self.ui_context.cursor.cursor_move(self.cursor_pos.as_f32());
         self.ui_context.update(delta_time as f32);
-        self.ui.update(
-            &mut self.ui_context,
-            delta_time as f32,
-            self.framebuffer_size,
-        );
-        self.ui_context.frame_end();
+        self.ui.update(&mut self.ui_context, self.framebuffer_size);
 
-        if self.ui.ability_sprint.mouse_left.clicked {
+        if self.ui.ability_sprint.mouse_left.just_pressed {
             self.ability_sprint();
         }
         if self.ui.ability_teleport.mouse_left.clicked {
@@ -309,6 +307,7 @@ impl geng::State for Game {
 
         self.render.draw_game(&mut self.model, framebuffer);
         self.render.draw_game_ui(&self.model, &self.ui, framebuffer);
+        self.ui_context.frame_end();
     }
 }
 
@@ -322,15 +321,9 @@ impl GameUi {
         }
     }
 
-    pub fn update(
-        &mut self,
-        context: &mut UiContext,
-        delta_time: f32,
-        framebuffer_size: vec2<usize>,
-    ) {
+    pub fn update(&mut self, context: &mut UiContext, framebuffer_size: vec2<usize>) {
         let screen = Aabb2::ZERO.extend_positive(framebuffer_size.as_f32());
         context.screen = screen;
-        context.update(delta_time);
 
         let layout_size = screen.height() * 0.05;
 

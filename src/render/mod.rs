@@ -152,7 +152,16 @@ impl GameRender {
         // Planned move
         if let Some(player) = model.shared.players.get(&model.player_id) {
             // Path
-            if let PlayerMove::Normal { path, .. } = &player.submitted_move {
+            let path = match &player.submitted_move {
+                PlayerMove::Normal { path, .. } => Some(path.clone()),
+                &PlayerMove::Throw { direction } => Some(
+                    (0..=shared::THROW_SPEED)
+                        .map(|i| player.pos + direction * i as ICoord)
+                        .collect(),
+                ),
+                _ => None,
+            };
+            if let Some(path) = path {
                 let skip = match model.shared.phase {
                     Phase::Planning { .. } => 0,
                     Phase::Resolution { .. } => {
@@ -186,14 +195,21 @@ impl GameRender {
             // Target ghost
             let pos = match &player.submitted_move {
                 PlayerMove::Normal { path, .. } => path.last().copied(),
-                PlayerMove::TeleportChanneling => None,
                 PlayerMove::TeleportActivate { teleport_to } => Some(*teleport_to),
-                PlayerMove::Throw { .. } => None,
+                &PlayerMove::Throw { direction }
+                    if matches!(model.shared.phase, Phase::Planning { .. }) =>
+                {
+                    Some(player.pos + direction * shared::THROW_SPEED as ICoord)
+                }
+                _ => None,
             };
             if let Some(pos) = pos
                 && player.pos != pos
             {
-                let texture = get_character_sprite(&sprites.characters, player.character);
+                let texture = match player.submitted_move {
+                    PlayerMove::Throw { .. } => &sprites.mushroom,
+                    _ => get_character_sprite(&sprites.characters, player.character),
+                };
                 let pos = map.tile_bounds(pos).as_f32();
                 geng_utils::texture::DrawTexture::new(texture)
                     .fit(pos, vec2(0.5, 0.5))
