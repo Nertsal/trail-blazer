@@ -487,6 +487,43 @@ impl GameRender {
                 ),
             );
         }
+
+        // Leaderboard
+        let top = vec2(
+            score_panel.center().x,
+            score_panel.max.y - score_panel.height() * 0.2,
+        );
+        let score_height = score_panel.height() / 50.0;
+        let character_height = score_panel.height() / 15.0;
+        let spacing = score_panel.height() / 25.0;
+        let total_height = score_height + character_height + spacing;
+        for (i, player) in model
+            .shared
+            .players
+            .values()
+            .sorted_by_key(|player| player.id)
+            .enumerate()
+        {
+            let top = top + vec2(0.0, -total_height * i as f32);
+            let color = player.character.color();
+            self.geng.draw2d().draw2d(
+                framebuffer,
+                &geng::PixelPerfectCamera,
+                &draw2d::Text::unit(self.assets.font.clone(), format!("{}", player.score), color)
+                    .align_bounding_box(vec2(0.5, 0.5))
+                    .transform(mat3::translate(top) * mat3::scale_uniform(score_height * 0.6)),
+            );
+            geng_utils::texture::DrawTexture::new(get_character_sprite(
+                &self.assets.sprites.characters,
+                player.character,
+            ))
+            .fit_height(
+                Aabb2::point(top - vec2(0.0, score_height)).extend_down(character_height),
+                0.5,
+            )
+            .colored(color)
+            .draw(&geng::PixelPerfectCamera, &self.geng, framebuffer);
+        }
     }
 }
 

@@ -1,6 +1,9 @@
 use super::*;
 
-use crate::interop::{ClientId, ClientMessage, ServerMessage};
+use crate::{
+    interop::{ClientId, ClientMessage, ServerMessage},
+    model::shared::GameEvent,
+};
 
 pub struct ClientModel {
     pub player_id: ClientId,
@@ -31,8 +34,8 @@ impl ClientModel {
         }
     }
 
-    pub fn update(&mut self, delta_time: FTime) {
-        self.shared.update(delta_time);
+    pub fn update(&mut self, delta_time: FTime) -> Vec<GameEvent> {
+        self.shared.update(delta_time)
     }
 
     pub fn handle_message(&mut self, message: ServerMessage) {
