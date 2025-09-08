@@ -108,8 +108,25 @@ impl Game {
                         player.submitted_move = PlayerMove::Normal {
                             path: vec![player.pos],
                             sprint: false,
-                        }
+                        };
+                        self.connection
+                            .send(ClientMessage::SubmitMove(player.submitted_move.clone()));
                     }
+                }
+            }
+        } else if let Some(player) = self.model.shared.players.get_mut(&self.model.player_id) {
+            if player.is_channeling {
+                player.submitted_move = PlayerMove::TeleportActivate {
+                    teleport_to: self.cursor_grid_pos,
+                };
+                self.connection
+                    .send(ClientMessage::SubmitMove(player.submitted_move.clone()));
+            } else if let PlayerMove::Throw { direction } = &mut player.submitted_move {
+                let new_dir = (self.cursor_grid_pos - player.pos).map(|x| x.clamp_abs(1));
+                if new_dir.x == 0 || new_dir.y == 0 {
+                    *direction = new_dir;
+                    self.connection
+                        .send(ClientMessage::SubmitMove(player.submitted_move.clone()));
                 }
             }
         }
@@ -209,7 +226,9 @@ impl Game {
                 player.submitted_move = PlayerMove::Normal {
                     path: vec![player.pos],
                     sprint: true,
-                }
+                };
+                self.connection
+                    .send(ClientMessage::SubmitMove(player.submitted_move.clone()));
             }
         }
     }
@@ -219,6 +238,8 @@ impl Game {
             return;
         };
         player.submitted_move = PlayerMove::TeleportChanneling;
+        self.connection
+            .send(ClientMessage::SubmitMove(player.submitted_move.clone()));
     }
 
     fn ability_throw(&mut self) {
@@ -244,6 +265,16 @@ impl geng::State for Game {
             self.framebuffer_size,
         );
         self.ui_context.frame_end();
+
+        if self.ui.ability_sprint.mouse_left.clicked {
+            self.ability_sprint();
+        }
+        if self.ui.ability_teleport.mouse_left.clicked {
+            self.ability_teleport();
+        }
+        if self.ui.ability_throw.mouse_left.clicked {
+            self.ability_throw();
+        }
 
         // Process server messages
         for message in self.connection.new_messages() {

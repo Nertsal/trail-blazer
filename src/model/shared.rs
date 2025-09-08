@@ -196,7 +196,7 @@ impl SharedModel {
         }
 
         let mut target_moves: HashMap<vec2<ICoord>, Vec<ClientId>> = HashMap::new();
-        for player in self.players.values() {
+        for player in self.players.values_mut() {
             match &player.submitted_move {
                 PlayerMove::Normal { path, .. } => {
                     if player.resolution_speed_left == resolving_speed
@@ -206,7 +206,11 @@ impl SharedModel {
                         target_moves.entry(pos).or_default().push(player.id);
                     }
                 }
-                PlayerMove::TeleportChanneling => {}
+                PlayerMove::TeleportChanneling => {
+                    if player.resolution_speed_left == player.resolution_speed_max {
+                        player.is_channeling = true;
+                    }
+                }
                 PlayerMove::TeleportActivate { teleport_to } => {
                     if player.resolution_speed_left == player.resolution_speed_max {
                         // Teleport on the first move
@@ -295,6 +299,7 @@ impl SharedModel {
         };
 
         player.resolution_speed_left = 0;
+        player.is_channeling = false;
         player.stunned_duration = Some(duration);
 
         // Drop mushroom
@@ -308,6 +313,8 @@ impl SharedModel {
                 position: start_pos,
             });
         }
+
+        std::mem::take(&mut player.submitted_move);
     }
 
     pub fn validate_move(&self, player_id: ClientId, player_move: &PlayerMove) -> bool {
