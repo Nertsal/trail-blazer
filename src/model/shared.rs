@@ -14,7 +14,9 @@ pub const SCORE_PER_MUSHROOM: Score = 10;
 pub enum GameEvent {
     StartResolution,
     FinishResolution,
+    MushroomPickup(vec2<ICoord>),
     MushroomsCollected(usize),
+    PlayerStunned(ClientId, vec2<ICoord>),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -276,7 +278,7 @@ impl SharedModel {
                     if let Some(player) = self.players.values().find(|player| player.pos == target)
                     {
                         mushroom.speed_left = 0;
-                        self.stun_player(player.id, 1);
+                        events.extend(self.stun_player(player.id, 1));
                     } else if self.map.walls.contains(&target) || !self.map.is_in_bounds(target) {
                         mushroom.speed_left = 0;
                     } else {
@@ -303,7 +305,7 @@ impl SharedModel {
                     if self.players.values().any(|player| player.pos == target)
                         || self.trails.iter().any(|trail| trail.pos == target)
                     {
-                        self.stun_player(player, 1);
+                        events.extend(self.stun_player(player, 1));
                         continue;
                     }
 
@@ -317,6 +319,7 @@ impl SharedModel {
                             // Collect mushroom
                             player.mushrooms += 1;
                             self.mushrooms.swap_remove(shroom_i);
+                            events.push(GameEvent::MushroomPickup(target));
                         }
 
                         if self.base == target {
@@ -348,7 +351,7 @@ impl SharedModel {
             } else {
                 // Bounce all players
                 for player in players {
-                    self.stun_player(player, 1);
+                    events.extend(self.stun_player(player, 1));
                 }
             }
         }
@@ -361,9 +364,12 @@ impl SharedModel {
         (events, true)
     }
 
-    pub fn stun_player(&mut self, player_id: ClientId, duration: Turns) {
+    #[must_use]
+    pub fn stun_player(&mut self, player_id: ClientId, duration: Turns) -> Vec<GameEvent> {
+        let mut events = Vec::new();
+
         let Some(player) = self.players.get_mut(&player_id) else {
-            return;
+            return events;
         };
 
         player.resolution_speed_left = 0;
@@ -385,6 +391,9 @@ impl SharedModel {
         }
 
         std::mem::take(&mut player.submitted_move);
+
+        events.push(GameEvent::PlayerStunned(player_id, player.pos));
+        events
     }
 
     pub fn validate_move(&self, player_id: ClientId, player_move: &PlayerMove) -> bool {

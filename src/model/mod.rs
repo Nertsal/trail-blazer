@@ -1,4 +1,5 @@
 pub mod client;
+pub mod particles;
 pub mod shared;
 
 use crate::interop::ClientId;
@@ -30,6 +31,10 @@ impl Map {
 
     pub fn to_world(&self, pos: vec2<ICoord>) -> vec2<FCoord> {
         self.cell_size * pos.as_r32()
+    }
+
+    pub fn to_world_center(&self, pos: vec2<ICoord>) -> vec2<FCoord> {
+        self.cell_size * (pos.as_r32() + vec2(0.5, 0.5).as_r32())
     }
 
     pub fn world_bounds(&self) -> Aabb2<FCoord> {

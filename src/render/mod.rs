@@ -1,15 +1,18 @@
 use crate::{
     assets::*,
     game::GameUi,
-    model::{client::ClientModel, shared::Phase, *},
+    model::{client::ClientModel, particles::ParticleKind, shared::Phase, *},
 };
 
 use geng::prelude::{itertools::Itertools, *};
 use geng_utils::conversions::*;
 
+const TARGET_SCREEN_SIZE: vec2<usize> = vec2(480, 320);
+
 pub struct GameRender {
     geng: Geng,
     assets: Rc<Assets>,
+    pixel_texture: ugli::Texture,
 }
 
 impl GameRender {
@@ -17,10 +20,16 @@ impl GameRender {
         Self {
             geng: geng.clone(),
             assets: assets.clone(),
+            pixel_texture: geng_utils::texture::new_texture(geng.ugli(), vec2(1, 1)),
         }
     }
 
-    pub fn draw_game(&self, model: &mut ClientModel, framebuffer: &mut ugli::Framebuffer) {
+    pub fn draw_game(&mut self, model: &mut ClientModel, framebuffer: &mut ugli::Framebuffer) {
+        let pixel_scale = framebuffer.size().as_f32() / TARGET_SCREEN_SIZE.as_f32();
+        let pixel_scale = pixel_scale.x.min(pixel_scale.y).floor().max(0.25);
+        let size = (framebuffer.size().as_f32() / pixel_scale).map(|x| x.floor() as usize);
+        geng_utils::texture::update_texture_size(&mut self.pixel_texture, size, self.geng.ugli());
+
         let sprites = &self.assets.sprites;
 
         // Background
@@ -262,6 +271,48 @@ impl GameRender {
                     .draw(&model.camera, &self.geng, framebuffer);
             }
         }
+
+        self.draw_pixels(model, framebuffer);
+    }
+
+    fn draw_pixels(&mut self, model: &ClientModel, final_buffer: &mut ugli::Framebuffer) {
+        let framebuffer =
+            &mut geng_utils::texture::attach_texture(&mut self.pixel_texture, self.geng.ugli());
+        ugli::clear(framebuffer, Some(Rgba::TRANSPARENT_BLACK), None, None);
+
+        for particle in &model.particles {
+            let t = particle.lifetime.get_ratio().as_f32().sqrt();
+            let color = match particle.kind {
+                ParticleKind::Mushroom => Rgba::try_from("#E5BD85").unwrap(),
+                ParticleKind::Stun => Rgba::try_from("#6D767B").unwrap(),
+            };
+            self.geng.draw2d().circle(
+                framebuffer,
+                &model.camera,
+                particle.position.as_f32(),
+                particle.radius.as_f32() * t,
+                color,
+            );
+        }
+        // Floating Text
+        // for (text, position, size, color, lifetime) in query!(
+        //     self.model.floating_texts,
+        //     (&text, &position, &size, &color, &lifetime)
+        // ) {
+        //     let t = lifetime.get_ratio().as_f32().sqrt();
+        //     self.util.draw_text(
+        //         text,
+        //         position.as_f32(),
+        //         &self.context.assets.fonts.revolver_game,
+        //         TextRenderOptions::new(size.as_f32() * t).color(*color),
+        //         &model.camera,
+        //         framebuffer,
+        //     );
+        // }
+
+        geng_utils::texture::DrawTexture::new(&self.pixel_texture)
+            .fit_screen(vec2(0.5, 0.5), final_buffer)
+            .draw(&geng::PixelPerfectCamera, &self.geng, final_buffer);
     }
 
     pub fn draw_game_ui(

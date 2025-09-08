@@ -86,6 +86,7 @@ impl ServerState {
                         self.model.spawn_mushroom();
                     }
                 }
+                _ => {}
             }
         }
     }
