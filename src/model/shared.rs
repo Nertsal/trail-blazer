@@ -327,22 +327,30 @@ impl SharedModel {
                     if player.resolution_speed_left == resolving_speed {
                         // Throw on the first move
                         let position = player.pos + direction;
-                        self.mushrooms.push(Mushroom {
+                        let mut mushroom = Mushroom {
                             position,
                             direction,
                             speed_left: player.resolution_speed_left.saturating_sub(1),
-                        });
+                        };
                         player.mushrooms -= 1;
                         player.resolution_speed_left = 0;
                         events.push(GameEvent::MushroomThrow);
-                        if let Some(player_id) = self
-                            .players
-                            .values()
-                            .find(|player| player.pos == position)
-                            .map(|player| player.id)
+                        if let Some(player) =
+                            self.players.values().find(|player| player.pos == position)
                         {
+                            mushroom.speed_left = 0;
+                            let push_to = player.pos + mushroom.direction;
+                            let player_id = player.id;
+                            if self.map.is_in_bounds(push_to)
+                                && !self.map.walls.contains(&push_to)
+                                && !self.players.values().any(|player| player.pos == push_to)
+                                && let Some(player) = self.players.get_mut(&player_id)
+                            {
+                                player.pos = push_to;
+                            }
                             events.extend(self.stun_player(player_id, 1));
                         }
+                        self.mushrooms.push(mushroom);
                     }
                 }
             }
