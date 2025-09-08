@@ -127,6 +127,13 @@ impl ServerState {
                 if let Some(player) = self.model.players.get_mut(&client_id) {
                     customization.name = rustrict::Censor::from_str(&customization.name).collect();
                     player.customization = customization;
+
+                    for client in self.clients.values_mut() {
+                        client.sender.send(ServerMessage::PlayerCustomization(
+                            player.id,
+                            player.customization.clone(),
+                        ));
+                    }
                 }
             }
             ClientMessage::SubmitMove(mov) => {

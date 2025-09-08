@@ -12,6 +12,7 @@ pub enum ServerMessage {
     Setup(Setup),
     StartResolution(shared::SharedModel),
     FinishResolution(shared::SharedModel),
+    PlayerCustomization(ClientId, PlayerCustomization),
 }
 
 #[derive(Debug, Serialize, Deserialize)]

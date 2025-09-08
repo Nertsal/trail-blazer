@@ -81,6 +81,11 @@ impl ClientModel {
             ServerMessage::Setup(_setup) => {}
             ServerMessage::StartResolution(model) => self.shared = model,
             ServerMessage::FinishResolution(model) => self.shared = model,
+            ServerMessage::PlayerCustomization(player, customization) => {
+                if let Some(player) = self.shared.players.get_mut(&player) {
+                    player.customization = customization;
+                }
+            }
         }
     }
 
