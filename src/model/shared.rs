@@ -430,6 +430,16 @@ impl SharedModel {
             return false;
         };
 
+        if player.is_channeling
+            && !(match player_move {
+                PlayerMove::Normal { path, .. } => path.is_empty(),
+                PlayerMove::TeleportActivate { .. } => true,
+                _ => false,
+            })
+        {
+            return false;
+        }
+
         match player_move {
             PlayerMove::Normal { path, sprint } => self.validate_path(player_id, path, *sprint),
             PlayerMove::TeleportChanneling => player.cooldown_teleport <= 0,
