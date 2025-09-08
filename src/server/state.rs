@@ -75,15 +75,18 @@ impl ServerState {
                 }
                 GameEvent::FinishResolution => {
                     self.model.finish_resolution();
+
+                    // Spawn mushrooms
+                    let mushrooms = self.model.mushrooms.len();
+                    let target = if thread_rng().gen_bool(0.2) { 2 } else { 1 };
+                    for _ in mushrooms..target {
+                        self.model.spawn_mushroom();
+                    }
+
                     for client in self.clients.values_mut() {
                         client
                             .sender
                             .send(ServerMessage::FinishResolution(self.model.clone()));
-                    }
-                }
-                GameEvent::MushroomsCollected(n) => {
-                    for _ in 0..n {
-                        self.model.spawn_mushroom();
                     }
                 }
                 _ => {}
