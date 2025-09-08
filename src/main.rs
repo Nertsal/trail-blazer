@@ -4,6 +4,7 @@ mod server;
 mod assets;
 mod game;
 mod interop;
+mod menu;
 mod model;
 mod render;
 mod ui;
@@ -82,12 +83,9 @@ fn main() {
         };
 
         Geng::run_with(&geng_options, move |geng| async move {
-            let connection = geng::net::client::connect(&args.connect.unwrap())
-                .await
-                .unwrap();
             let manager = geng.asset_manager();
             let assets = assets::Assets::load(manager).await.unwrap();
-            let state = game::Game::new(&geng, &Rc::new(assets), connection).await;
+            let state = menu::MainMenu::new(&geng, &Rc::new(assets), args.connect).await;
             geng.run_state(state).await;
         });
 

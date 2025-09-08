@@ -31,6 +31,12 @@ pub struct Sprites {
     pub mushroom_collected: PixelTexture,
     pub timer_frame: PixelTexture,
     pub score_panel: PixelTexture,
+    pub menu_background: PixelTexture,
+    pub join: PixelTexture,
+    pub character_panel: PixelTexture,
+    pub name_panel: PixelTexture,
+    pub button_prev: PixelTexture,
+    pub button_next: PixelTexture,
 }
 
 #[derive(geng::asset::Load)]

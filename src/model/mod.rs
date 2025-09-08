@@ -75,7 +75,7 @@ impl Map {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Character {
     Ant,
     Bunny,
@@ -98,8 +98,8 @@ pub enum Character {
 }
 
 impl Character {
-    pub fn random() -> Self {
-        *[
+    pub fn all() -> [Self; 18] {
+        [
             Self::Ant,
             Self::Bunny,
             Self::Cat,
@@ -119,8 +119,10 @@ impl Character {
             Self::Snake,
             Self::Unicorn,
         ]
-        .choose(&mut thread_rng())
-        .unwrap()
+    }
+
+    pub fn random() -> Self {
+        *Character::all().choose(&mut thread_rng()).unwrap()
     }
 
     pub fn color(&self) -> Rgba<f32> {

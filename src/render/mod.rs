@@ -578,7 +578,7 @@ impl GameRender {
     }
 }
 
-fn get_character_sprite(sprites: &CharacterSprites, character: Character) -> &PixelTexture {
+pub fn get_character_sprite(sprites: &CharacterSprites, character: Character) -> &PixelTexture {
     match character {
         Character::Ant => &sprites.ant,
         Character::Bunny => &sprites.bunny,
