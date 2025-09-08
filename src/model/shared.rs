@@ -175,7 +175,10 @@ impl SharedModel {
                         player.cooldown_teleport = TELEPORT_COOLDOWN;
                         TELEPORT_SPEED
                     }
-                    PlayerMove::TeleportActivate { .. } => TELEPORT_SPEED,
+                    PlayerMove::TeleportActivate { .. } => {
+                        player.is_channeling = false;
+                        TELEPORT_SPEED
+                    }
                     PlayerMove::Throw { .. } => THROW_SPEED,
                 };
                 player.resolution_speed_max = speed;

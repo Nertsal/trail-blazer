@@ -166,6 +166,32 @@ impl GameRender {
                     Rgba::try_from("#E5BD85").unwrap(),
                 );
             }
+
+            // State
+            let state = if player.stunned_duration.is_some() {
+                "stunned"
+            } else if player.is_channeling {
+                "teleporting"
+            } else {
+                ""
+            };
+            if !state.is_empty() {
+                self.geng.draw2d().draw2d(
+                    framebuffer,
+                    &model.camera,
+                    &draw2d::Text::unit(
+                        self.assets.font.clone(),
+                        state,
+                        Rgba::try_from("#F6F5DE").unwrap(),
+                    )
+                    .transform(
+                        mat3::translate(vec2(player_pos.center().x, player_pos.min.y))
+                            * mat3::scale_uniform(
+                                model.shared.map.cell_size.y.as_f32() * 0.1 * 0.6,
+                            ),
+                    ),
+                );
+            }
         }
 
         // Planned move
