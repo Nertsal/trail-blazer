@@ -26,7 +26,9 @@ pub struct Mushroom {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SharedModel {
     pub map: Map,
+    pub turns_max: Turns,
 
+    pub turn_current: Turns,
     pub phase: Phase,
 
     pub base: vec2<ICoord>,
@@ -38,6 +40,7 @@ pub struct SharedModel {
 impl SharedModel {
     pub fn new(map: Map) -> Self {
         let mut model = Self {
+            turn_current: 1,
             phase: Phase::Planning {
                 time_left: FTime::new(TIME_PER_PLAN),
             },
@@ -47,6 +50,7 @@ impl SharedModel {
             mushrooms: Vec::new(),
             trails: Vec::new(),
 
+            turns_max: 30,
             map,
         };
         model.spawn_mushroom();
@@ -118,6 +122,7 @@ impl SharedModel {
             }
         }
 
+        self.turn_current += 1;
         self.phase = Phase::Planning {
             time_left: FTime::new(TIME_PER_PLAN),
         }

@@ -268,25 +268,84 @@ impl GameRender {
             }
         }
 
-        if let Phase::Planning { time_left } = model.shared.phase {
-            // Planning timer
-            let map_bounds = model.shared.map.world_bounds().as_f32();
-            self.geng.draw2d().draw2d(
-                framebuffer,
-                &model.camera,
-                &draw2d::Text::unit(
-                    self.assets.font.clone(),
-                    format!("Planning: {:.1}s", time_left.as_f32().max(0.0)),
-                    Rgba::try_from("#E5BD85").unwrap(),
-                )
-                .transform(
-                    mat3::translate(vec2(
-                        map_bounds.center().x,
-                        map_bounds.max.y + model.shared.map.cell_size.y.as_f32() * 1.5,
-                    )) * mat3::scale_uniform(0.25),
-                ),
-            );
-        }
+        let map_bounds = model.shared.map.world_bounds().as_f32();
+        let top = vec2(
+            map_bounds.center().x,
+            map_bounds.max.y + model.shared.map.cell_size.y.as_f32() * 1.5,
+        );
+
+        // Turn count
+        self.geng.draw2d().draw2d(
+            framebuffer,
+            &model.camera,
+            &draw2d::Text::unit(
+                self.assets.font.clone(),
+                format!("/{}", model.shared.turns_max),
+                Rgba::try_from("#474C80").unwrap(),
+            )
+            .align_bounding_box(vec2(1.0, 0.5))
+            .transform(
+                mat3::translate(top - vec2(model.shared.map.cell_size.x.as_f32() * 0.1, 0.0))
+                    * mat3::scale_uniform(model.shared.map.cell_size.y.as_f32() * 0.25),
+            ),
+        );
+        self.geng.draw2d().draw2d(
+            framebuffer,
+            &model.camera,
+            &draw2d::Text::unit(
+                self.assets.font.clone(),
+                format!("{}", model.shared.turn_current),
+                Rgba::try_from("#B4A091").unwrap(),
+            )
+            .align_bounding_box(vec2(1.0, 0.5))
+            .transform(
+                mat3::translate(top - vec2(model.shared.map.cell_size.x.as_f32() * 2.1, 0.0))
+                    * mat3::scale_uniform(model.shared.map.cell_size.y.as_f32() * 0.25),
+            ),
+        );
+        self.geng.draw2d().draw2d(
+            framebuffer,
+            &model.camera,
+            &draw2d::Text::unit(
+                self.assets.font.clone(),
+                "Turn",
+                Rgba::try_from("#474C80").unwrap(),
+            )
+            .align_bounding_box(vec2(1.0, 0.5))
+            .transform(
+                mat3::translate(top - vec2(model.shared.map.cell_size.x.as_f32() * 3.1, 0.0))
+                    * mat3::scale_uniform(model.shared.map.cell_size.y.as_f32() * 0.25),
+            ),
+        );
+
+        // Turn timer
+        let t = match model.shared.phase {
+            Phase::Planning { time_left } => time_left.as_f32().max(0.0) / shared::TIME_PER_PLAN,
+            _ => 0.0,
+        };
+        let timer_size = vec2(
+            self.assets.sprites.timer_frame.size().as_f32().aspect(),
+            1.0,
+        ) * model.shared.map.cell_size.y.as_f32()
+            * 0.75;
+        let timer = Aabb2::point(top + vec2(model.shared.map.cell_size.x.as_f32() * 0.1, 0.0))
+            .extend_symmetric(vec2(0.0, timer_size.y) / 2.0)
+            .extend_right(timer_size.x);
+        let timer_fill = timer.extend_uniform(-timer_size.y * 0.15);
+        let timer_fill = timer_fill.extend_right(-timer_fill.width() * (1.0 - t));
+        self.geng.draw2d().quad(
+            framebuffer,
+            &model.camera,
+            timer_fill,
+            Rgba::try_from("#B03B59").unwrap(),
+        );
+        self.geng.draw2d().textured_quad(
+            framebuffer,
+            &model.camera,
+            timer,
+            &self.assets.sprites.timer_frame,
+            Rgba::WHITE,
+        );
     }
 }
 
