@@ -142,11 +142,30 @@ impl GameRender {
         for player in model.shared.players.values() {
             let color = player.character.color();
             let texture = get_character_sprite(&sprites.characters, player.character);
-            let pos = map.tile_bounds(player.pos).as_f32();
+            let player_pos = map.tile_bounds(player.pos).as_f32();
             geng_utils::texture::DrawTexture::new(texture)
-                .fit(pos, vec2(0.5, 0.5))
+                .fit(player_pos, vec2(0.5, 0.5))
                 .colored(color)
                 .draw(&model.camera, &self.geng, framebuffer);
+
+            // Mushrooms
+            let icon_size = map.cell_size.as_f32() * 0.15;
+            let spacing = icon_size.x * 0.5;
+            let n = player.mushrooms;
+            let total_width = icon_size.x * n as f32 + spacing * n.saturating_sub(1) as f32;
+            for i in 0..n {
+                let pos = Aabb2::point(vec2(
+                    player_pos.center().x + total_width * 0.5 * (i as f32 - (n as f32 - 1.0) / 2.0),
+                    player_pos.max.y,
+                ))
+                .extend_symmetric(icon_size / 2.0);
+                self.geng.draw2d().quad(
+                    framebuffer,
+                    &model.camera,
+                    pos,
+                    Rgba::try_from("#E5BD85").unwrap(),
+                );
+            }
         }
 
         // Planned move
