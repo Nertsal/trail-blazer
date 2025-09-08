@@ -150,12 +150,36 @@ pub struct PlayerTrail {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum PlayerMove {
+    Normal {
+        path: Vec<vec2<ICoord>>,
+        sprint: bool,
+    },
+    TeleportChanneling,
+    TeleportActivate {
+        teleport_to: vec2<ICoord>,
+    },
+    Throw {
+        direction: vec2<ICoord>,
+    },
+}
+
+impl Default for PlayerMove {
+    fn default() -> Self {
+        Self::Normal {
+            path: Vec::new(),
+            sprint: false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Player {
     pub id: ClientId,
     pub character: Character,
     pub pos: vec2<ICoord>,
     pub max_speed: usize,
-    pub submitted_move: Vec<vec2<ICoord>>,
+    pub submitted_move: PlayerMove,
     /// Currently carrying mushrooms.
     pub mushrooms: usize,
     /// Total number of retrieved mushrooms.
@@ -167,6 +191,8 @@ pub struct Player {
     pub resolution_speed_left: usize,
     pub cooldown_sprint: Turns,
     pub cooldown_teleport: Turns,
+    /// Teleport channeling state.
+    pub is_channeling: bool,
 }
 
 impl Player {
@@ -176,7 +202,7 @@ impl Player {
             character,
             pos,
             max_speed: 5,
-            submitted_move: vec![],
+            submitted_move: PlayerMove::default(),
             mushrooms: 0,
             collected_mushrooms: 0,
             stunned_duration: None,
@@ -184,10 +210,11 @@ impl Player {
             resolution_speed_left: 0,
             cooldown_sprint: 0,
             cooldown_teleport: 0,
+            is_channeling: false,
         }
     }
 
-    pub fn speed(&self) -> usize {
-        self.max_speed.saturating_sub(self.mushrooms).max(1)
+    pub fn speed(&self, sprint: bool) -> usize {
+        self.max_speed.saturating_sub(self.mushrooms).max(1) + if sprint { 3 } else { 0 }
     }
 }

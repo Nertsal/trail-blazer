@@ -73,9 +73,9 @@ impl Game {
             } => self.mouse_release(),
             geng::Event::CursorMove { position } => self.cursor_move(position),
             geng::Event::KeyPress { key } => match key {
-                geng::Key::Digit1 => todo!(),
-                geng::Key::Digit2 => todo!(),
-                geng::Key::Digit3 => todo!(),
+                geng::Key::Digit1 => self.ability_sprint(),
+                geng::Key::Digit2 => self.ability_teleport(),
+                geng::Key::Digit3 => self.ability_throw(),
                 _ => {}
             },
             _ => {}
@@ -100,7 +100,17 @@ impl Game {
                         path: vec![player.pos],
                     },
                 });
-                player.submitted_move = vec![player.pos];
+                match &mut player.submitted_move {
+                    PlayerMove::Normal { path, .. } => {
+                        *path = vec![player.pos];
+                    }
+                    _ => {
+                        player.submitted_move = PlayerMove::Normal {
+                            path: vec![player.pos],
+                            sprint: false,
+                        }
+                    }
+                }
             }
         }
     }
@@ -108,13 +118,14 @@ impl Game {
     fn mouse_release(&mut self) {
         if let Some(drag) = self.drag.take() {
             match drag.target {
-                DragTarget::Player { path } => {
+                DragTarget::Player { .. } => {
                     let Some(player) = self.model.shared.players.get_mut(&self.model.player_id)
                     else {
                         return;
                     };
-                    player.submitted_move = path.clone();
-                    self.connection.send(ClientMessage::SubmitMove(path));
+                    // player.submitted_move = path.clone();
+                    self.connection
+                        .send(ClientMessage::SubmitMove(player.submitted_move.clone()));
                 }
             }
         }
@@ -140,6 +151,13 @@ impl Game {
                     else {
                         return;
                     };
+
+                    let sprint = matches!(
+                        player.submitted_move,
+                        PlayerMove::Normal { sprint: true, .. }
+                    );
+
+                    let mut update = false;
                     if path
                         .len()
                         .checked_sub(2)
@@ -148,10 +166,8 @@ impl Game {
                     {
                         // Cancel last move
                         path.pop();
-                        player.submitted_move = path.clone();
-                        self.connection
-                            .send(ClientMessage::SubmitMove(path.clone()));
-                    } else if path.len() <= player.speed()
+                        update = true;
+                    } else if path.len() <= player.speed(sprint)
                         && !path.contains(&self.cursor_grid_pos)
                         && let Some(&last) = path.last()
                         && shared::are_adjacent(last, self.cursor_grid_pos)
@@ -160,13 +176,58 @@ impl Game {
                     {
                         // Add tile
                         path.push(self.cursor_grid_pos);
-                        player.submitted_move = path.clone();
+                        update = true;
+                    }
+
+                    if update {
+                        match &mut player.submitted_move {
+                            PlayerMove::Normal {
+                                path: move_path, ..
+                            } => *move_path = path.clone(),
+                            _ => {
+                                player.submitted_move = PlayerMove::Normal {
+                                    path: path.clone(),
+                                    sprint: false,
+                                };
+                            }
+                        }
                         self.connection
-                            .send(ClientMessage::SubmitMove(path.clone()));
+                            .send(ClientMessage::SubmitMove(player.submitted_move.clone()));
                     }
                 }
             }
         }
+    }
+
+    fn ability_sprint(&mut self) {
+        let Some(player) = self.model.shared.players.get_mut(&self.model.player_id) else {
+            return;
+        };
+        match &mut player.submitted_move {
+            PlayerMove::Normal { sprint, .. } => *sprint = !*sprint,
+            _ => {
+                player.submitted_move = PlayerMove::Normal {
+                    path: vec![player.pos],
+                    sprint: true,
+                }
+            }
+        }
+    }
+
+    fn ability_teleport(&mut self) {
+        let Some(player) = self.model.shared.players.get_mut(&self.model.player_id) else {
+            return;
+        };
+        player.submitted_move = PlayerMove::TeleportChanneling;
+    }
+
+    fn ability_throw(&mut self) {
+        let Some(player) = self.model.shared.players.get_mut(&self.model.player_id) else {
+            return;
+        };
+        player.submitted_move = PlayerMove::Throw {
+            direction: vec2(1, 0),
+        };
     }
 }
 

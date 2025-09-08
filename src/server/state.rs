@@ -14,7 +14,7 @@ pub struct ServerState {
     pub config: Config,
     pub clients: HashMap<ClientId, Client>,
     pub model: SharedModel,
-    pub queued_moves: HashMap<ClientId, Vec<vec2<ICoord>>>,
+    pub queued_moves: HashMap<ClientId, PlayerMove>,
 }
 
 impl ServerState {
@@ -102,8 +102,8 @@ impl ServerState {
                 // ));
                 client.sender.send(ServerMessage::Ping);
             }
-            ClientMessage::SubmitMove(path) => {
-                self.queued_moves.insert(client_id, path);
+            ClientMessage::SubmitMove(mov) => {
+                self.queued_moves.insert(client_id, mov);
             }
         }
     }

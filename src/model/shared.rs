@@ -4,6 +4,10 @@ use geng::prelude::itertools::Itertools;
 
 pub const TIME_PER_PLAN: f32 = 5.0;
 pub const TIME_PER_MOVE: f32 = 0.5;
+pub const SPRINT_COOLDOWN: Turns = 3;
+pub const TELEPORT_COOLDOWN: Turns = 3;
+pub const TELEPORT_SPEED: usize = 5;
+pub const THROW_SPEED: usize = 5;
 
 #[derive(Debug, Clone)]
 pub enum GameEvent {
@@ -111,7 +115,7 @@ impl SharedModel {
     pub fn finish_resolution(&mut self) {
         for player in self.players.values_mut() {
             // Clear move
-            player.submitted_move.clear();
+            std::mem::take(&mut player.submitted_move);
 
             // Update stun
             if let Some(stun) = &mut player.stunned_duration {
@@ -120,6 +124,10 @@ impl SharedModel {
                     player.stunned_duration = None;
                 }
             }
+
+            // Update cooldowns
+            player.cooldown_sprint -= 1;
+            player.cooldown_teleport -= 1;
         }
 
         self.turn_current += 1;
@@ -136,7 +144,7 @@ impl SharedModel {
         // Validate paths
         let mut invalid = Vec::new();
         for player in self.players.values() {
-            if !self.validate_path(player.id, &player.submitted_move) {
+            if !self.validate_move(player.id, &player.submitted_move) {
                 invalid.push(player.id);
             }
         }
@@ -145,10 +153,24 @@ impl SharedModel {
         for player in self.players.values_mut() {
             if player.stunned_duration.is_some() || invalid.contains(&player.id) {
                 player.resolution_speed_left = 0;
-                player.submitted_move.clear();
+                std::mem::take(&mut player.submitted_move);
             } else {
-                player.resolution_speed_max = player.speed();
-                player.resolution_speed_left = player.speed();
+                let speed = match player.submitted_move {
+                    PlayerMove::Normal { sprint, .. } => {
+                        if sprint {
+                            player.cooldown_sprint = SPRINT_COOLDOWN;
+                        }
+                        player.speed(sprint)
+                    }
+                    PlayerMove::TeleportChanneling => {
+                        player.cooldown_teleport = TELEPORT_COOLDOWN;
+                        TELEPORT_SPEED
+                    }
+                    PlayerMove::TeleportActivate { .. } => TELEPORT_SPEED,
+                    PlayerMove::Throw { .. } => THROW_SPEED,
+                };
+                player.resolution_speed_max = speed;
+                player.resolution_speed_left = speed;
             }
         }
         self.trails.clear();
@@ -174,17 +196,29 @@ impl SharedModel {
         }
 
         let mut target_moves: HashMap<vec2<ICoord>, Vec<ClientId>> = HashMap::new();
-        self.players
-            .values()
-            .filter(|player| player.resolution_speed_left == resolving_speed)
-            .for_each(|player| {
-                if let Some(&pos) = player
-                    .submitted_move
-                    .get(1 + player.resolution_speed_max - player.resolution_speed_left)
-                {
-                    target_moves.entry(pos).or_default().push(player.id);
+        for player in self.players.values() {
+            match &player.submitted_move {
+                PlayerMove::Normal { path, .. } => {
+                    if player.resolution_speed_left == resolving_speed
+                        && let Some(&pos) =
+                            path.get(1 + player.resolution_speed_max - player.resolution_speed_left)
+                    {
+                        target_moves.entry(pos).or_default().push(player.id);
+                    }
                 }
-            });
+                PlayerMove::TeleportChanneling => {}
+                PlayerMove::TeleportActivate { teleport_to } => {
+                    if player.resolution_speed_left == player.resolution_speed_max {
+                        // Teleport on the first move
+                        target_moves
+                            .entry(*teleport_to)
+                            .or_default()
+                            .push(player.id);
+                    }
+                }
+                PlayerMove::Throw { direction } => {}
+            }
+        }
 
         if target_moves.is_empty() {
             return (events, false);
@@ -222,18 +256,19 @@ impl SharedModel {
                             player.mushrooms = 0;
                         }
 
-                        let connection_from = player
-                            .submitted_move
-                            .iter()
-                            .position(|&pos| pos == player.pos)
-                            .and_then(|i| i.checked_sub(1))
-                            .and_then(|i| player.submitted_move.get(i).copied());
-                        self.trails.push(PlayerTrail {
-                            player: player.id,
-                            pos: player.pos,
-                            connection_from,
-                            connection_to: target,
-                        });
+                        if let PlayerMove::Normal { path, .. } = &player.submitted_move {
+                            let connection_from = path
+                                .iter()
+                                .position(|&pos| pos == player.pos)
+                                .and_then(|i| i.checked_sub(1))
+                                .and_then(|i| path.get(i).copied());
+                            self.trails.push(PlayerTrail {
+                                player: player.id,
+                                pos: player.pos,
+                                connection_from,
+                                connection_to: target,
+                            });
+                        }
                         player.pos = target;
                         player.resolution_speed_left -= 1;
                     }
@@ -264,7 +299,8 @@ impl SharedModel {
 
         // Drop mushroom
         if player.mushrooms > 0
-            && let Some(&start_pos) = player.submitted_move.first()
+            && let PlayerMove::Normal { path, .. } = &player.submitted_move
+            && let Some(&start_pos) = path.first()
             && start_pos != player.pos
         {
             player.mushrooms -= 1;
@@ -274,12 +310,38 @@ impl SharedModel {
         }
     }
 
-    pub fn validate_path(&self, player_id: ClientId, path: &[vec2<ICoord>]) -> bool {
+    pub fn validate_move(&self, player_id: ClientId, player_move: &PlayerMove) -> bool {
         let Some(player) = self.players.get(&player_id) else {
             return false;
         };
 
-        if path.len() > player.speed() + 1 {
+        match player_move {
+            PlayerMove::Normal { path, sprint } => self.validate_path(player_id, path, *sprint),
+            PlayerMove::TeleportChanneling => player.cooldown_teleport <= 0,
+            PlayerMove::TeleportActivate { teleport_to } => {
+                player.is_channeling && distance(player.pos, *teleport_to) <= 3
+            }
+            PlayerMove::Throw { direction } => {
+                player.mushrooms > 0 && (direction.x == 0 || direction.y == 0)
+            }
+        }
+    }
+
+    pub fn validate_path(
+        &self,
+        player_id: ClientId,
+        path: &[vec2<ICoord>],
+        mut sprint: bool,
+    ) -> bool {
+        let Some(player) = self.players.get(&player_id) else {
+            return false;
+        };
+
+        if player.cooldown_sprint > 0 {
+            sprint = false;
+        }
+
+        if path.len() > player.speed(sprint) + 1 {
             return false; // Path exceed player's speed
         }
 

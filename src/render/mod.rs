@@ -151,35 +151,46 @@ impl GameRender {
 
         // Planned move
         if let Some(player) = model.shared.players.get(&model.player_id) {
-            let skip = match model.shared.phase {
-                Phase::Planning { .. } => 0,
-                Phase::Resolution { .. } => {
-                    player.resolution_speed_max - player.resolution_speed_left
-                }
-            };
-            for (&from, &at, &to) in player.submitted_move.iter().skip(skip).tuple_windows() {
-                let trail = &PlayerTrail {
-                    player: player.id,
-                    pos: at,
-                    connection_from: Some(from),
-                    connection_to: to,
+            // Path
+            if let PlayerMove::Normal { path, .. } = &player.submitted_move {
+                let skip = match model.shared.phase {
+                    Phase::Planning { .. } => 0,
+                    Phase::Resolution { .. } => {
+                        player.resolution_speed_max - player.resolution_speed_left
+                    }
                 };
+                for (&from, &at, &to) in path.iter().skip(skip).tuple_windows() {
+                    let trail = &PlayerTrail {
+                        player: player.id,
+                        pos: at,
+                        connection_from: Some(from),
+                        connection_to: to,
+                    };
 
-                let color = Rgba::try_from("#393b42").unwrap();
+                    let color = Rgba::try_from("#393b42").unwrap();
 
-                let (texture, rotation, flip) = get_trail_render(&sprites.trail, trail);
+                    let (texture, rotation, flip) = get_trail_render(&sprites.trail, trail);
 
-                let pos = map.tile_bounds(at).as_f32();
-                geng_utils::texture::DrawTexture::new(texture)
-                    .fit(pos, vec2(0.5, 0.5))
-                    .transformed(
-                        mat3::rotate(rotation)
-                            * mat3::scale(vec2(1.0, if flip { -1.0 } else { 1.0 })),
-                    )
-                    .colored(color)
-                    .draw(&model.camera, &self.geng, framebuffer);
+                    let pos = map.tile_bounds(at).as_f32();
+                    geng_utils::texture::DrawTexture::new(texture)
+                        .fit(pos, vec2(0.5, 0.5))
+                        .transformed(
+                            mat3::rotate(rotation)
+                                * mat3::scale(vec2(1.0, if flip { -1.0 } else { 1.0 })),
+                        )
+                        .colored(color)
+                        .draw(&model.camera, &self.geng, framebuffer);
+                }
             }
-            if let Some(&pos) = player.submitted_move.last()
+
+            // Target ghost
+            let pos = match &player.submitted_move {
+                PlayerMove::Normal { path, .. } => path.last().copied(),
+                PlayerMove::TeleportChanneling => None,
+                PlayerMove::TeleportActivate { teleport_to } => Some(*teleport_to),
+                PlayerMove::Throw { .. } => None,
+            };
+            if let Some(pos) = pos
                 && player.pos != pos
             {
                 let texture = get_character_sprite(&sprites.characters, player.character);

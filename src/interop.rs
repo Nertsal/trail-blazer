@@ -17,7 +17,7 @@ pub enum ServerMessage {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ClientMessage {
     Pong,
-    SubmitMove(Vec<vec2<ICoord>>),
+    SubmitMove(PlayerMove),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
