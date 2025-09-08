@@ -181,6 +181,11 @@ impl GameRender {
                 "stunned"
             } else if player.is_channeling {
                 "teleporting"
+            } else if matches!(
+                player.submitted_move,
+                PlayerMove::Normal { sprint: true, .. }
+            ) {
+                "sprinting"
             } else {
                 ""
             };

@@ -66,7 +66,7 @@ impl SharedModel {
             mushrooms: Vec::new(),
             trails: Vec::new(),
 
-            turns_max: 1,
+            turns_max: 30,
             map,
         };
         model.spawn_mushroom();
