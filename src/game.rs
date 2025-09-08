@@ -13,10 +13,13 @@ pub struct Game {
     connection: ClientConnection,
     geng: Geng,
     assets: Rc<Assets>,
+    unit_quad: ugli::VertexBuffer<draw2d::TexturedVertex>,
+    post_texture: ugli::Texture,
     ui_context: UiContext,
     render: GameRender,
     model: client::ClientModel,
     ui: GameUi,
+    time: FTime,
 
     framebuffer_size: vec2<usize>,
     cursor_pos: vec2<f64>,
@@ -57,9 +60,12 @@ impl Game {
             geng: geng.clone(),
             assets: assets.clone(),
             ui_context: UiContext::new(geng, assets),
+            unit_quad: geng_utils::geometry::unit_quad_geometry(geng.ugli()),
+            post_texture: geng_utils::texture::new_texture(geng.ugli(), vec2(1, 1)),
             render: GameRender::new(geng, assets),
             model: client::ClientModel::new(setup.player_id, setup.model),
             ui: GameUi::new(geng, assets),
+            time: FTime::ZERO,
 
             framebuffer_size: vec2(1, 1),
             cursor_pos: vec2::ZERO,
@@ -284,6 +290,7 @@ impl geng::State for Game {
     }
 
     fn update(&mut self, delta_time: f64) {
+        self.time += FTime::new(delta_time as f32);
         self.ui_context.cursor.cursor_move(self.cursor_pos.as_f32());
         self.ui_context.update(delta_time as f32);
         self.ui.update(&mut self.ui_context, self.framebuffer_size);
@@ -320,8 +327,15 @@ impl geng::State for Game {
         self.model.update(delta_time);
     }
 
-    fn draw(&mut self, framebuffer: &mut ugli::Framebuffer) {
-        self.framebuffer_size = framebuffer.size();
+    fn draw(&mut self, final_buffer: &mut ugli::Framebuffer) {
+        self.framebuffer_size = final_buffer.size();
+        geng_utils::texture::update_texture_size(
+            &mut self.post_texture,
+            final_buffer.size(),
+            self.geng.ugli(),
+        );
+        let framebuffer =
+            &mut geng_utils::texture::attach_texture(&mut self.post_texture, self.geng.ugli());
         ugli::clear(
             framebuffer,
             Some(Rgba::try_from("#1A151F").unwrap()),
@@ -332,6 +346,21 @@ impl geng::State for Game {
         self.render.draw_game(&mut self.model, framebuffer);
         self.render.draw_game_ui(&self.model, &self.ui, framebuffer);
         self.ui_context.frame_end();
+
+        ugli::draw(
+            final_buffer,
+            &self.assets.shaders.crt,
+            ugli::DrawMode::TriangleFan,
+            &self.unit_quad,
+            ugli::uniforms! {
+                u_texture: &self.post_texture,
+                u_curvature: 50.0,
+                u_vignette_multiplier: 0.1,
+                u_scanlines_multiplier: 0.1,
+                u_time: self.time.as_f32(),
+            },
+            ugli::DrawParameters::default(),
+        );
     }
 }
 
