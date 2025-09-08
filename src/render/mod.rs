@@ -614,6 +614,37 @@ impl GameRender {
                     .fit_into(name),
             );
         }
+
+        if let Phase::Results { .. } = model.shared.phase {
+            // Winner
+            if let Some(player) = model
+                .shared
+                .players
+                .values()
+                .max_by_key(|player| player.score)
+            {
+                self.geng.draw2d().quad(
+                    framebuffer,
+                    &geng::PixelPerfectCamera,
+                    Aabb2::point(screen_size / 2.0).extend_symmetric(screen_size / 2.0),
+                    Rgba::try_from("#1A151Faa").unwrap(),
+                );
+                self.geng.draw2d().draw2d(
+                    framebuffer,
+                    &geng::PixelPerfectCamera,
+                    &draw2d::Text::unit(
+                        self.assets.font.clone(),
+                        format!("Winner - {} : {}", player.customization.name, player.score),
+                        Rgba::try_from("#B4A091").unwrap(),
+                    )
+                    .align_bounding_box(vec2(0.5, 0.5))
+                    .transform(
+                        mat3::translate(screen_size / 2.0)
+                            * mat3::scale_uniform(screen_size.y / 30.0 * 0.6),
+                    ),
+                );
+            }
+        }
     }
 }
 

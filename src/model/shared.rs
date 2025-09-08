@@ -66,7 +66,7 @@ impl SharedModel {
             mushrooms: Vec::new(),
             trails: Vec::new(),
 
-            turns_max: 30,
+            turns_max: 1,
             map,
         };
         model.spawn_mushroom();
@@ -169,7 +169,7 @@ impl SharedModel {
     pub fn new_game(&mut self) {
         self.mushrooms.clear();
         self.trails.clear();
-        self.turn_current = 0;
+        self.turn_current = 1;
         for player in self.players.values_mut() {
             *player = Player::new(player.id, player.customization.clone(), player.pos);
         }
