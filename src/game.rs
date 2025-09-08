@@ -254,8 +254,22 @@ impl GameUi {
             pos.x += ability_size.x;
         }
 
+        let mushrooms_size = vec2(
+            context
+                .assets
+                .sprites
+                .mushrooms_panel
+                .size()
+                .as_f32()
+                .aspect(),
+            1.0,
+        ) * 2.5
+            * 0.642857
+            * layout_size;
         self.mushrooms.update(
-            Aabb2::point(pos).extend_positive(vec2(ability_size.x * 5.0, ability_size.y)),
+            Aabb2::point(pos + vec2(0.0, ability_size.y / 2.0))
+                .extend_right(mushrooms_size.x)
+                .extend_symmetric(vec2(0.0, mushrooms_size.y / 2.0)),
             context,
         );
     }

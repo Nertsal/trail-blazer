@@ -253,6 +253,14 @@ impl GameRender {
                     ui.mushrooms.position.bottom_left() + vec2(mushroom_size.x * i as f32, 0.0),
                 )
                 .extend_positive(mushroom_size);
+                let pos = Aabb2::point(pos.center()).extend_symmetric(
+                    vec2(
+                        self.assets.sprites.mushroom_slot.size().as_f32().aspect(),
+                        1.0,
+                    ) * mushroom_size.y
+                        * 0.7
+                        / 2.0,
+                );
                 let texture = if player.mushrooms <= i {
                     &self.assets.sprites.mushroom_slot
                 } else {
