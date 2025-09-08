@@ -57,6 +57,10 @@ impl ServerState {
         }
     }
 
+    pub fn player_disconnect(&mut self, player_id: ClientId) {
+        self.model.players.remove(&player_id);
+    }
+
     pub fn tick(&mut self) {
         let delta_time = FTime::new(ServerState::TICKS_PER_SECOND.recip());
         if self.clients.is_empty() {

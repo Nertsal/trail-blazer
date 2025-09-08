@@ -9,6 +9,7 @@ impl Drop for ClientConnection {
     fn drop(&mut self) {
         let mut state = self.state.lock().unwrap();
         let _client = state.clients.remove(&self.id).unwrap();
+        state.player_disconnect(self.id);
     }
 }
 
