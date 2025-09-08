@@ -163,7 +163,6 @@ pub struct WidgetPressState {
 pub struct WidgetSfxConfig {
     pub hover: bool,
     pub left_click: bool,
-    pub right_click: bool,
 }
 
 impl WidgetState {
@@ -178,7 +177,7 @@ impl WidgetState {
     pub fn update(&mut self, position: Aabb2<f32>, context: &UiContext) {
         self.position = position;
         if self.visible {
-            // let was_hovered = self.hovered;
+            let was_hovered = self.hovered;
             self.hovered = self.position.contains(context.cursor.position);
 
             self.mouse_left
@@ -186,15 +185,14 @@ impl WidgetState {
             self.mouse_right
                 .update(context, self.hovered, &context.cursor.right);
 
-            // if self.mouse_left.clicked && self.sfx_config.left_click {
-            //     context.sfx.play(&context.assets.sounds.ui_click);
-            // }
-            // if self.mouse_right.clicked && self.sfx_config.right_click {
-            //     context.sfx.play(&context.assets.sounds.ui_click);
-            // }
-            // if !was_hovered && self.hovered && self.sfx_config.hover {
-            //     context.sfx.play(&context.assets.sounds.ui_hover);
-            // }
+            if self.mouse_left.clicked && self.sfx_config.left_click {
+                let mut sfx = context.assets.sounds.click.play();
+                sfx.set_volume(0.5);
+            }
+            if !was_hovered && self.hovered && self.sfx_config.hover {
+                let mut sfx = context.assets.sounds.hover.play();
+                sfx.set_volume(0.5);
+            }
         } else {
             self.mouse_left.just_released = self.mouse_left.pressed.is_some();
             self.mouse_right.just_released = self.mouse_right.pressed.is_some();
@@ -260,18 +258,6 @@ impl WidgetMouseState {
 }
 
 impl WidgetSfxConfig {
-    pub fn none() -> Self {
-        Self::default()
-    }
-
-    pub fn all() -> Self {
-        Self {
-            hover: true,
-            left_click: true,
-            right_click: true,
-        }
-    }
-
     pub fn hover() -> Self {
         Self {
             hover: true,
@@ -284,23 +270,6 @@ impl WidgetSfxConfig {
             hover: true,
             left_click: true,
             ..default()
-        }
-    }
-
-    pub fn hover_right() -> Self {
-        Self {
-            hover: true,
-            right_click: true,
-            ..default()
-        }
-    }
-
-    pub fn hover_left_right() -> Self {
-        Self {
-            hover: true,
-            left_click: true,
-            right_click: true,
-            // ..default()
         }
     }
 }

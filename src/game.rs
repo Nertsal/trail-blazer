@@ -1,9 +1,12 @@
 use crate::{
     assets::*,
     interop::*,
-    model::{shared::Phase, *},
+    model::{
+        shared::{GameEvent, Phase},
+        *,
+    },
     render::GameRender,
-    ui::{UiContext, WidgetState},
+    ui::{UiContext, WidgetSfxConfig, WidgetState},
 };
 
 use geng::prelude::*;
@@ -85,9 +88,21 @@ impl Game {
             } => self.mouse_release(),
             geng::Event::CursorMove { position } => self.cursor_move(position),
             geng::Event::KeyPress { key } => match key {
-                geng::Key::Digit1 => self.ability_sprint(),
-                geng::Key::Digit2 => self.ability_teleport(),
-                geng::Key::Digit3 => self.ability_throw(),
+                geng::Key::Digit1 => {
+                    let mut sfx = self.assets.sounds.click.play();
+                    sfx.set_volume(0.5);
+                    self.ability_sprint();
+                }
+                geng::Key::Digit2 => {
+                    let mut sfx = self.assets.sounds.click.play();
+                    sfx.set_volume(0.5);
+                    self.ability_teleport();
+                }
+                geng::Key::Digit3 => {
+                    let mut sfx = self.assets.sounds.click.play();
+                    sfx.set_volume(0.5);
+                    self.ability_throw();
+                }
                 _ => {}
             },
             _ => {}
@@ -329,7 +344,22 @@ impl geng::State for Game {
 
         // Update model
         let delta_time = FTime::new(delta_time as f32);
-        self.model.update(delta_time);
+        for event in self.model.update(delta_time) {
+            let sounds = &self.assets.sounds;
+            let sfx = match event {
+                GameEvent::ResultsOver => Some(&sounds.gameover),
+                GameEvent::MushroomPickup(_) => Some(&sounds.gather),
+                GameEvent::PlayerStunned(..) => Some(&sounds.stunned),
+                GameEvent::Score(..) => Some(&sounds.score),
+                GameEvent::Teleport => Some(&sounds.teleport),
+                GameEvent::MushroomThrow => Some(&sounds.throw_mushroom),
+                _ => None,
+            };
+            if let Some(sfx) = sfx {
+                let mut sfx = sfx.play();
+                sfx.set_volume(0.5);
+            }
+        }
     }
 
     fn draw(&mut self, final_buffer: &mut ugli::Framebuffer) {
@@ -372,9 +402,9 @@ impl geng::State for Game {
 impl GameUi {
     pub fn new(_geng: &Geng, _assets: &Rc<Assets>) -> Self {
         Self {
-            ability_sprint: WidgetState::new(),
-            ability_teleport: WidgetState::new(),
-            ability_throw: WidgetState::new(),
+            ability_sprint: WidgetState::new().with_sfx(WidgetSfxConfig::hover_left()),
+            ability_teleport: WidgetState::new().with_sfx(WidgetSfxConfig::hover_left()),
+            ability_throw: WidgetState::new().with_sfx(WidgetSfxConfig::hover_left()),
             mushrooms: WidgetState::new(),
         }
     }

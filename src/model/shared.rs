@@ -20,6 +20,8 @@ pub enum GameEvent {
     MushroomsCollected(usize),
     PlayerStunned(ClientId, vec2<ICoord>),
     Score(Score, vec2<ICoord>),
+    Teleport,
+    MushroomThrow,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -275,6 +277,7 @@ impl SharedModel {
                             .entry(*teleport_to)
                             .or_default()
                             .push(player.id);
+                        events.push(GameEvent::Teleport);
                     }
                 }
                 &PlayerMove::Throw { direction } => {
@@ -287,6 +290,7 @@ impl SharedModel {
                             direction,
                             speed_left: THROW_SPEED.saturating_sub(1),
                         });
+                        events.push(GameEvent::MushroomThrow);
                     }
                 }
             }

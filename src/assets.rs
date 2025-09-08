@@ -6,6 +6,7 @@ use geng::prelude::*;
 pub struct Assets {
     pub sprites: Sprites,
     pub shaders: Shaders,
+    pub sounds: Sounds,
     #[load(path = "dungeon-mode.ttf")]
     pub font: Rc<geng::Font>,
 }
@@ -13,6 +14,18 @@ pub struct Assets {
 #[derive(geng::asset::Load)]
 pub struct Shaders {
     pub crt: Rc<ugli::Program>,
+}
+
+#[derive(geng::asset::Load)]
+pub struct Sounds {
+    pub click: Rc<geng::Sound>,
+    pub hover: Rc<geng::Sound>,
+    pub gameover: Rc<geng::Sound>,
+    pub gather: Rc<geng::Sound>,
+    pub score: Rc<geng::Sound>,
+    pub stunned: Rc<geng::Sound>,
+    pub teleport: Rc<geng::Sound>,
+    pub throw_mushroom: Rc<geng::Sound>,
 }
 
 #[derive(geng::asset::Load)]

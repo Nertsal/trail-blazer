@@ -1,7 +1,7 @@
 use crate::{
     assets::Assets,
     model::Character,
-    ui::{UiContext, WidgetState},
+    ui::{UiContext, WidgetSfxConfig, WidgetState},
 };
 
 use geng::prelude::*;
@@ -294,15 +294,15 @@ impl geng::State for MainMenu {
 impl MainMenuUi {
     pub fn new(_geng: &Geng, _assets: &Rc<Assets>) -> Self {
         Self {
-            join: WidgetState::new(),
+            join: WidgetState::new().with_sfx(WidgetSfxConfig::hover_left()),
             name: WidgetState::new(),
             character: WidgetState::new(),
-            skin_prev: WidgetState::new(),
+            skin_prev: WidgetState::new().with_sfx(WidgetSfxConfig::hover_left()),
             skin_text: WidgetState::new(),
-            skin_next: WidgetState::new(),
-            color_prev: WidgetState::new(),
+            skin_next: WidgetState::new().with_sfx(WidgetSfxConfig::hover_left()),
+            color_prev: WidgetState::new().with_sfx(WidgetSfxConfig::hover_left()),
             color_text: WidgetState::new(),
-            color_next: WidgetState::new(),
+            color_next: WidgetState::new().with_sfx(WidgetSfxConfig::hover_left()),
         }
     }
 
