@@ -8,7 +8,7 @@ pub const SPRINT_COOLDOWN: Turns = 3;
 pub const TELEPORT_COOLDOWN: Turns = 3;
 pub const TELEPORT_SPEED: usize = 5;
 pub const THROW_SPEED: usize = 5;
-pub const SCORE_PER_MUSHROOM: Score = 10;
+pub const SCORE_PER_MUSHROOM: Score = 3;
 
 #[derive(Debug, Clone)]
 pub enum GameEvent {
