@@ -10,6 +10,7 @@ pub type ICoord = i64;
 pub type FCoord = R32;
 pub type FTime = R32;
 pub type Turns = i64;
+pub type Score = u64;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Map {
@@ -176,6 +177,7 @@ impl Default for PlayerMove {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Player {
     pub id: ClientId,
+    pub score: Score,
     pub character: Character,
     pub pos: vec2<ICoord>,
     pub max_speed: usize,
@@ -199,6 +201,7 @@ impl Player {
     pub fn new(id: ClientId, character: Character, pos: vec2<ICoord>) -> Self {
         Self {
             id,
+            score: 0,
             character,
             pos,
             max_speed: 5,

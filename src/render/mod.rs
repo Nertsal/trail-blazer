@@ -381,6 +381,40 @@ impl GameRender {
             &self.assets.sprites.timer_frame,
             Rgba::WHITE,
         );
+
+        // Score panel
+        let screen_size = framebuffer.size().as_f32();
+        let score_panel = Aabb2::point(screen_size)
+            .extend_down(screen_size.y)
+            .extend_left(self.assets.sprites.score_panel.size().as_f32().aspect() * screen_size.y);
+        self.geng.draw2d().textured_quad(
+            framebuffer,
+            &geng::PixelPerfectCamera,
+            score_panel,
+            &self.assets.sprites.score_panel,
+            Rgba::WHITE,
+        );
+
+        // Personal score
+        if let Some(player) = model.shared.players.get(&model.player_id) {
+            let score = vec2(
+                score_panel.center().x,
+                score_panel.max.y - score_panel.height() * 0.1,
+            );
+            self.geng.draw2d().draw2d(
+                framebuffer,
+                &geng::PixelPerfectCamera,
+                &draw2d::Text::unit(
+                    self.assets.font.clone(),
+                    format!("{}", player.score),
+                    Rgba::try_from("#E5BD85").unwrap(),
+                )
+                .align_bounding_box(vec2(0.5, 0.5))
+                .transform(
+                    mat3::translate(score) * mat3::scale_uniform(score_panel.height() / 30.0 * 0.6),
+                ),
+            );
+        }
     }
 }
 

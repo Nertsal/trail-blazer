@@ -8,6 +8,7 @@ pub const SPRINT_COOLDOWN: Turns = 3;
 pub const TELEPORT_COOLDOWN: Turns = 3;
 pub const TELEPORT_SPEED: usize = 5;
 pub const THROW_SPEED: usize = 5;
+pub const SCORE_PER_MUSHROOM: Score = 10;
 
 #[derive(Debug, Clone)]
 pub enum GameEvent {
@@ -316,6 +317,7 @@ impl SharedModel {
                         if self.base == target {
                             // Submit resources to base
                             player.collected_mushrooms += player.mushrooms;
+                            player.score += SCORE_PER_MUSHROOM * player.mushrooms as Score;
                             events.push(GameEvent::MushroomsCollected(player.mushrooms));
                             player.mushrooms = 0;
                         }
