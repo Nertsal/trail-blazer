@@ -19,6 +19,7 @@ pub enum GameEvent {
     MushroomPickup(vec2<ICoord>),
     MushroomsCollected(usize),
     PlayerStunned(ClientId, vec2<ICoord>),
+    Score(Score, vec2<ICoord>),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -62,7 +63,7 @@ impl SharedModel {
             mushrooms: Vec::new(),
             trails: Vec::new(),
 
-            turns_max: 2,
+            turns_max: 30,
             map,
         };
         model.spawn_mushroom();
@@ -351,8 +352,10 @@ impl SharedModel {
 
                         if self.base == target {
                             // Submit resources to base
-                            player.score += SCORE_PER_MUSHROOM * player.mushrooms as Score;
+                            let score = SCORE_PER_MUSHROOM * player.mushrooms as Score;
+                            player.score += score;
                             events.push(GameEvent::MushroomsCollected(player.mushrooms));
+                            events.push(GameEvent::Score(score, player.pos));
                             player.mushrooms = 0;
                         }
 

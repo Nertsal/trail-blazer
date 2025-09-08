@@ -1,3 +1,5 @@
+use geng_utils::bounded::Bounded;
+
 use super::*;
 
 use crate::{
@@ -13,6 +15,7 @@ pub struct ClientModel {
     pub tile_variants: HashMap<vec2<ICoord>, usize>,
     pub spawn_particles: Vec<SpawnParticles>,
     pub particles: Vec<Particle>,
+    pub floating_texts: Vec<FloatingText>,
 }
 
 impl ClientModel {
@@ -33,6 +36,7 @@ impl ClientModel {
 
             spawn_particles: Vec::new(),
             particles: Vec::new(),
+            floating_texts: Vec::new(),
 
             tile_variants: HashMap::new(),
             shared: model,
@@ -45,6 +49,13 @@ impl ClientModel {
         for event in &events {
             self.process_event(event);
         }
+
+        for text in &mut self.floating_texts {
+            text.lifetime.change(-delta_time);
+            text.position += text.velocity * delta_time;
+        }
+        self.floating_texts
+            .retain(|text| text.lifetime.is_above_min());
 
         for particle in &mut self.particles {
             particle.lifetime.change(-delta_time);
@@ -91,6 +102,14 @@ impl ClientModel {
                     radius: r32(0.6),
                 },
                 ..default()
+            }),
+            GameEvent::Score(score, pos) => self.floating_texts.push(FloatingText {
+                text: format!("+{score}").into(),
+                position: self.shared.map.to_world_center(pos),
+                velocity: vec2(0.1, 0.5).as_r32(),
+                size: r32(0.5),
+                color: Rgba::try_from("#E5BD85").unwrap(),
+                lifetime: Bounded::new_max(r32(1.0)),
             }),
             GameEvent::PlayerStunned(_, pos) => self.spawn_particles.push(SpawnParticles {
                 kind: ParticleKind::Stun,

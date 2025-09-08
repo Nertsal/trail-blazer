@@ -272,6 +272,21 @@ impl GameRender {
             }
         }
 
+        // Floating Text
+        for text in &model.floating_texts {
+            let t = text.lifetime.get_ratio().as_f32().sqrt();
+            self.geng.draw2d().draw2d(
+                framebuffer,
+                &model.camera,
+                &draw2d::Text::unit(self.assets.font.clone(), &text.text, text.color)
+                    .align_bounding_box(vec2(0.5, 0.5))
+                    .transform(
+                        mat3::translate(text.position.as_f32())
+                            * mat3::scale_uniform(text.size.as_f32() * t * 0.6),
+                    ),
+            );
+        }
+
         self.draw_pixels(model, framebuffer);
     }
 
@@ -294,21 +309,6 @@ impl GameRender {
                 color,
             );
         }
-        // Floating Text
-        // for (text, position, size, color, lifetime) in query!(
-        //     self.model.floating_texts,
-        //     (&text, &position, &size, &color, &lifetime)
-        // ) {
-        //     let t = lifetime.get_ratio().as_f32().sqrt();
-        //     self.util.draw_text(
-        //         text,
-        //         position.as_f32(),
-        //         &self.context.assets.fonts.revolver_game,
-        //         TextRenderOptions::new(size.as_f32() * t).color(*color),
-        //         &model.camera,
-        //         framebuffer,
-        //     );
-        // }
 
         geng_utils::texture::DrawTexture::new(&self.pixel_texture)
             .fit_screen(vec2(0.5, 0.5), final_buffer)
