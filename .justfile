@@ -19,7 +19,7 @@ update-server:
     ssh {{server_user}}@{{server}} systemctl --user restart trail-blazer
 
 publish-web:
-    CONNECT=wss://{{server}} cargo geng build --release --platform web
+    CONNECT=wss://{{server}} cargo geng build --release --platform web --out-dir target/geng
     butler -- push target/geng nertsal/trail-blazer:html5
 
 deploy:

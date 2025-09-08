@@ -471,7 +471,7 @@ impl GameRender {
             )
             .align_bounding_box(vec2(1.0, 0.5))
             .transform(
-                mat3::translate(top - vec2(model.shared.map.cell_size.x.as_f32() * 3.1, 0.0))
+                mat3::translate(top - vec2(model.shared.map.cell_size.x.as_f32() * 3.5, 0.0))
                     * mat3::scale_uniform(model.shared.map.cell_size.y.as_f32() * 0.25),
             ),
         );
