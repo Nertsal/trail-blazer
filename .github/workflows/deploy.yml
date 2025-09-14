@@ -8,7 +8,7 @@ jobs:
   build-web:
     name: Build (Web)
     runs-on: ubuntu-latest
-    container: ghcr.io/geng-engine/cargo-geng@sha256:65384ff654422795fb53780fcb9096f89ac44cf5f44d5fb6662e25ec258b90c3
+    container: ghcr.io/geng-engine/cargo-geng@sha256:c3b33ef1f25fda66b45d0bffe495c734c3080f2b9b88238c69f41424d7716e01
     steps:
       - name: Checkout
         uses: actions/checkout@v3
