@@ -61,9 +61,13 @@ impl ServerState {
         self.model.players.remove(&player_id);
     }
 
+    pub fn player_spectate(&mut self, client_id: ClientId) {
+        self.model.players.remove(&client_id);
+    }
+
     pub fn tick(&mut self) {
         let delta_time = FTime::new(ServerState::TICKS_PER_SECOND.recip());
-        if self.clients.is_empty() {
+        if self.model.players.is_empty() {
             if self.model.turn_current != 0 {
                 self.model.new_game();
             }
@@ -139,6 +143,9 @@ impl ServerState {
                         ));
                     }
                 }
+            }
+            ClientMessage::Spectate => {
+                self.player_spectate(client_id);
             }
             ClientMessage::SubmitMove(mov) => {
                 self.queued_moves.insert(client_id, mov);

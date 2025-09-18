@@ -19,6 +19,7 @@ pub enum ServerMessage {
 pub enum ClientMessage {
     Pong,
     SetCustomization(PlayerCustomization),
+    Spectate,
     SubmitMove(PlayerMove),
 }
 

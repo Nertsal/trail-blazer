@@ -28,6 +28,7 @@ pub struct MainMenu {
 
 pub struct MainMenuUi {
     pub join: WidgetState,
+    pub spectate: WidgetState,
     pub name: WidgetState,
     pub character: WidgetState,
     pub skin_prev: WidgetState,
@@ -149,6 +150,25 @@ impl geng::State for MainMenu {
                 async move {
                     let connection = geng::net::client::connect(&connect.unwrap()).await.unwrap();
                     crate::game::Game::new(&geng, &assets, connection, customization).await
+                }
+            };
+            let state = {
+                geng::LoadingScreen::new(
+                    &self.geng,
+                    geng::EmptyLoadingScreen::new(&self.geng),
+                    future,
+                )
+            };
+            self.transition = Some(geng::state::Transition::Push(Box::new(state)));
+        }
+        if self.ui.spectate.mouse_left.clicked {
+            let future = {
+                let geng = self.geng.clone();
+                let assets = self.assets.clone();
+                let connect = self.connect.clone();
+                async move {
+                    let connection = geng::net::client::connect(&connect.unwrap()).await.unwrap();
+                    crate::game::Game::new_spectator(&geng, &assets, connection).await
                 }
             };
             let state = {
@@ -313,6 +333,16 @@ impl geng::State for MainMenu {
             .fit(self.ui.join.position, vec2(0.5, 0.5))
             .draw(&geng::PixelPerfectCamera, &self.geng, framebuffer);
 
+        let texture = button_variant(
+            &self.ui.spectate,
+            &sprites.spectate,
+            &sprites.spectate_hover,
+            &sprites.spectate_press,
+        );
+        geng_utils::texture::DrawTexture::new(texture)
+            .fit(self.ui.spectate.position, vec2(0.5, 0.5))
+            .draw(&geng::PixelPerfectCamera, &self.geng, framebuffer);
+
         self.ui_context.frame_end();
 
         ugli::draw(
@@ -336,6 +366,7 @@ impl MainMenuUi {
     pub fn new(_geng: &Geng, _assets: &Rc<Assets>) -> Self {
         Self {
             join: WidgetState::new().with_sfx(WidgetSfxConfig::hover_left()),
+            spectate: WidgetState::new().with_sfx(WidgetSfxConfig::hover_left()),
             name: WidgetState::new(),
             character: WidgetState::new(),
             skin_prev: WidgetState::new().with_sfx(WidgetSfxConfig::hover_left()),
@@ -376,6 +407,12 @@ impl MainMenuUi {
             main.top_left() + vec2(108.0, -50.0) / vec2(124.0, 62.0) * main.size(),
         );
         self.join.update(join, context);
+
+        let spectate = Aabb2::from_corners(
+            main.top_left() + vec2(130.0, -37.0) / vec2(124.0, 62.0) * main.size(),
+            main.top_left() + vec2(172.0, -50.0) / vec2(124.0, 62.0) * main.size(),
+        );
+        self.spectate.update(spectate, context);
 
         let skin_prev = Aabb2::from_corners(
             main.top_left() + vec2(56.0, -10.0) / vec2(124.0, 62.0) * main.size(),

@@ -78,6 +78,16 @@ impl Game {
         }
     }
 
+    pub async fn new_spectator(
+        geng: &Geng,
+        assets: &Rc<Assets>,
+        connection: ClientConnection,
+    ) -> Self {
+        let mut model = Self::new(geng, assets, connection, PlayerCustomization::random()).await;
+        model.connection.send(ClientMessage::Spectate);
+        model
+    }
+
     fn handle_event(&mut self, event: geng::Event) {
         match event {
             geng::Event::MousePress {
