@@ -99,11 +99,11 @@ impl ClientModel {
                 },
                 ..default()
             }),
-            GameEvent::MushroomsCollected(n) => self.spawn_particles.push(SpawnParticles {
+            GameEvent::MushroomsCollected(pos, n) => self.spawn_particles.push(SpawnParticles {
                 kind: ParticleKind::Mushroom,
                 density: r32(3.0 + 1.5 * n as f32),
                 distribution: ParticleDistribution::Circle {
-                    center: self.shared.map.to_world_center(self.shared.base),
+                    center: self.shared.map.to_world_center(pos),
                     radius: r32(0.6),
                 },
                 ..default()

@@ -22,7 +22,7 @@ impl ServerState {
 
     pub fn new() -> Self {
         let mut map = Map::new(vec2(14, 7));
-        map.walls = vec![vec2(3, 0), vec2(-2, 0)];
+        map.walls = vec![vec2(2, 0), vec2(-1, 0)];
         Self {
             timer: Timer::new(),
             next_id: 1,

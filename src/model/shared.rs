@@ -18,7 +18,7 @@ pub enum GameEvent {
     ResultsOver,
     NextMove,
     MushroomPickup(vec2<ICoord>),
-    MushroomsCollected(usize),
+    MushroomsCollected(vec2<ICoord>, usize),
     PlayerStunned(ClientId, vec2<ICoord>),
     Score(Score, vec2<ICoord>),
     Teleport,
@@ -47,7 +47,7 @@ pub struct SharedModel {
     pub turn_current: Turns,
     pub phase: Phase,
 
-    pub base: vec2<ICoord>,
+    pub bases: Vec<vec2<ICoord>>,
     pub players: HashMap<ClientId, Player>,
     pub mushrooms: Vec<Mushroom>,
     pub trails: Vec<PlayerTrail>,
@@ -61,7 +61,10 @@ impl SharedModel {
                 time_left: FTime::new(TIME_PER_PLAN),
             },
 
-            base: map.bounds.center(),
+            bases: vec![
+                map.bounds.center() - vec2(3, 0),
+                map.bounds.center() + vec2(4, 0),
+            ],
             players: HashMap::new(),
             mushrooms: Vec::new(),
             trails: Vec::new(),
@@ -113,8 +116,8 @@ impl SharedModel {
         let mut position = None;
         for _ in 0..10 {
             let pos = self.map.random_position();
-            if distance(self.base, pos) <= 2
-                || self.map.walls.contains(&pos)
+            if self.map.walls.contains(&pos)
+                || self.bases.iter().any(|base| distance(*base, pos) <= 2)
                 || self
                     .players
                     .values()
@@ -393,11 +396,11 @@ impl SharedModel {
 
                         let player = self.players.get_mut(&player_id).unwrap();
 
-                        if self.base == target {
+                        if self.bases.contains(&target) {
                             // Submit resources to base
                             let score = SCORE_PER_MUSHROOM * player.mushrooms as Score;
                             player.score += score;
-                            events.push(GameEvent::MushroomsCollected(player.mushrooms));
+                            events.push(GameEvent::MushroomsCollected(target, player.mushrooms));
                             events.push(GameEvent::Score(score, player.pos));
                             player.mushrooms = 0;
                         }

@@ -113,10 +113,12 @@ impl GameRender {
         }
 
         // Base
-        let pos = map.tile_bounds(model.shared.base).as_f32();
-        geng_utils::texture::DrawTexture::new(&self.assets.sprites.base)
-            .fit(pos, vec2(0.5, 0.5))
-            .draw(&model.camera, &self.geng, framebuffer);
+        for &base in &model.shared.bases {
+            let pos = map.tile_bounds(base).as_f32();
+            geng_utils::texture::DrawTexture::new(&self.assets.sprites.base)
+                .fit(pos, vec2(0.5, 0.5))
+                .draw(&model.camera, &self.geng, framebuffer);
+        }
 
         // Mushrooms
         for mushroom in &model.shared.mushrooms {
