@@ -10,7 +10,7 @@ client *ARGS:
 web command *ARGS:
     cargo geng {{command}} --platform web --release -- {{ARGS}}
 
-server := "trail-blazer.gameserver.kuviman.com"
+server := "trail-blazer.nertsal.com"
 server_user := "nertsal"
 
 update-server:
@@ -20,7 +20,7 @@ update-server:
 
 publish-web:
     CONNECT=wss://{{server}} cargo geng build --release --platform web --out-dir target/geng
-    butler -- push target/geng nertsal/trail-blazer:html5
+    butler -- push target/geng nertsal/trail-blazer-sc-edition:html5
 
 deploy:
     just update-server
