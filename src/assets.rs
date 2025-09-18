@@ -40,6 +40,7 @@ pub struct Sprites {
     pub outline_straight_right: PixelTexture,
     #[load(list = "0..=1")]
     pub tiles: Vec<PixelTexture>,
+    pub highlight_tile: PixelTexture,
     pub wall: PixelTexture,
     pub mushroom: PixelTexture,
     pub base: PixelTexture,
