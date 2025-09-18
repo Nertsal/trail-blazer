@@ -10,6 +10,7 @@ pub type ClientConnection = geng::net::client::Connection<ServerMessage, ClientM
 pub enum ServerMessage {
     Ping,
     Setup(Setup),
+    Sync(shared::SharedModel),
     StartResolution(shared::SharedModel),
     FinishResolution(shared::SharedModel),
     PlayerCustomization(ClientId, PlayerCustomization),

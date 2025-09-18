@@ -9,10 +9,12 @@ pub const TELEPORT_COOLDOWN: Turns = 3;
 pub const TELEPORT_SPEED: usize = 5;
 pub const THROW_SPEED: usize = 5;
 pub const SCORE_PER_MUSHROOM: Score = 3;
+pub const STARTING_SCREEN_TIME: f32 = 10.0;
 pub const RESULTS_SCREEN_TIME: f32 = 10.0;
 
 #[derive(Debug, Clone)]
 pub enum GameEvent {
+    StartGame,
     StartResolution,
     FinishResolution,
     ResultsOver,
@@ -27,6 +29,7 @@ pub enum GameEvent {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Phase {
+    Starting { time_left: FTime },
     Planning { time_left: FTime },
     Resolution { next_move_in: FTime },
     Results { time_left: FTime },
@@ -79,6 +82,14 @@ impl SharedModel {
     pub fn update(&mut self, delta_time: FTime) -> Vec<GameEvent> {
         let mut events = Vec::new();
         match &mut self.phase {
+            Phase::Starting { time_left } => {
+                if !self.players.is_empty() {
+                    *time_left -= delta_time;
+                }
+                if *time_left <= FTime::ZERO {
+                    events.push(GameEvent::StartGame);
+                }
+            }
             Phase::Planning { time_left } => {
                 *time_left -= delta_time;
                 if *time_left <= FTime::ZERO {
@@ -137,6 +148,15 @@ impl SharedModel {
         });
     }
 
+    pub fn start_game(&mut self) {
+        let Phase::Starting { .. } = self.phase else {
+            return;
+        };
+        self.phase = Phase::Resolution {
+            next_move_in: r32(TIME_PER_PLAN),
+        };
+    }
+
     pub fn finish_resolution(&mut self) {
         for player in self.players.values_mut() {
             // Clear move
@@ -176,8 +196,8 @@ impl SharedModel {
         for player in self.players.values_mut() {
             *player = Player::new(player.id, player.customization.clone(), player.pos);
         }
-        self.phase = Phase::Planning {
-            time_left: FTime::new(TIME_PER_PLAN),
+        self.phase = Phase::Starting {
+            time_left: FTime::new(STARTING_SCREEN_TIME),
         };
     }
 

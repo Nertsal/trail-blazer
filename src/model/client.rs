@@ -79,6 +79,7 @@ impl ClientModel {
                 self.messages.push(ClientMessage::Pong);
             }
             ServerMessage::Setup(_setup) => {}
+            ServerMessage::Sync(model) => self.shared = model,
             ServerMessage::StartResolution(model) => self.shared = model,
             ServerMessage::FinishResolution(model) => self.shared = model,
             ServerMessage::PlayerCustomization(player, customization) => {

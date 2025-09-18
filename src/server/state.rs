@@ -51,6 +51,11 @@ impl ServerState {
                 Player::new(player_id, PlayerCustomization::random(), position),
             );
         }
+
+        for client in self.clients.values_mut() {
+            client.sender.send(ServerMessage::Sync(self.model.clone()));
+        }
+
         Setup {
             player_id,
             model: self.model.clone(),
@@ -59,21 +64,40 @@ impl ServerState {
 
     pub fn player_disconnect(&mut self, player_id: ClientId) {
         self.model.players.remove(&player_id);
+        if self.model.players.is_empty() {
+            self.model.new_game();
+        }
+
+        for client in self.clients.values_mut() {
+            client.sender.send(ServerMessage::Sync(self.model.clone()));
+        }
     }
 
     pub fn player_spectate(&mut self, client_id: ClientId) {
         self.model.players.remove(&client_id);
+        if self.model.players.is_empty() {
+            self.model.new_game();
+        }
+        if let Some(client) = self.clients.get_mut(&client_id) {
+            client.sender.send(ServerMessage::Sync(self.model.clone()));
+        }
     }
 
     pub fn tick(&mut self) {
         let delta_time = FTime::new(ServerState::TICKS_PER_SECOND.recip());
         if self.model.players.is_empty() {
-            if self.model.turn_current != 0 {
+            if !matches!(self.model.phase, Phase::Starting { .. }) {
                 self.model.new_game();
             }
         } else {
             for event in self.model.update(delta_time) {
                 match event {
+                    GameEvent::StartGame => {
+                        self.model.start_game();
+                        for client in self.clients.values_mut() {
+                            client.sender.send(ServerMessage::Sync(self.model.clone()));
+                        }
+                    }
                     GameEvent::StartResolution => {
                         for player in self.model.players.values_mut() {
                             player.submitted_move = self

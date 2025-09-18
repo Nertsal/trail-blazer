@@ -548,6 +548,23 @@ impl GameRender {
                     ),
                 );
             }
+            Phase::Starting { .. } => {
+                self.geng.draw2d().draw2d(
+                    framebuffer,
+                    &model.camera,
+                    &draw2d::Text::unit(
+                        self.assets.font.clone(),
+                        "Starting in:",
+                        Rgba::try_from("#474C80").unwrap(),
+                    )
+                    .align_bounding_box(vec2(1.0, 0.5))
+                    .transform(
+                        mat3::translate(
+                            top - vec2(model.shared.map.cell_size.x.as_f32() * 0.1, 0.0),
+                        ) * mat3::scale_uniform(model.shared.map.cell_size.y.as_f32() * 0.25),
+                    ),
+                );
+            }
             Phase::Results { .. } => {
                 self.geng.draw2d().draw2d(
                     framebuffer,
@@ -571,6 +588,9 @@ impl GameRender {
         let t = match model.shared.phase {
             Phase::Planning { time_left } => {
                 (time_left.as_f32() / shared::TIME_PER_PLAN).clamp(0.0, 1.0)
+            }
+            Phase::Starting { time_left } => {
+                (time_left.as_f32() / shared::STARTING_SCREEN_TIME).clamp(0.0, 1.0)
             }
             Phase::Results { time_left } => {
                 (time_left.as_f32() / shared::RESULTS_SCREEN_TIME).clamp(0.0, 1.0)
