@@ -387,12 +387,13 @@ impl GameRender {
     ) {
         if let Some(player) = model.shared.players.get(&model.player_id) {
             // Abilities
-            let texture = if player.cooldown_sprint > 0 {
+            let active = player.stunned_duration.is_none() && player.cooldown_sprint <= 0;
+            let texture = if !active {
                 &self.assets.sprites.abilities.sprint_disable
             } else {
                 &self.assets.sprites.abilities.sprint
             };
-            let feedback = if player.cooldown_sprint <= 0 && ui.ability_sprint.hovered
+            let feedback = if active && ui.ability_sprint.hovered
                 || matches!(
                     player.submitted_move,
                     PlayerMove::Normal { sprint: true, .. }
@@ -409,12 +410,13 @@ impl GameRender {
                 Rgba::WHITE,
             );
 
-            let texture = if player.cooldown_teleport > 0 {
+            let active = player.stunned_duration.is_none() && player.cooldown_teleport <= 0;
+            let texture = if !active {
                 &self.assets.sprites.abilities.teleport_disable
             } else {
                 &self.assets.sprites.abilities.teleport
             };
-            let feedback = if player.cooldown_teleport <= 0 && ui.ability_teleport.hovered
+            let feedback = if active && ui.ability_teleport.hovered
                 || matches!(
                     player.submitted_move,
                     PlayerMove::TeleportChanneling | PlayerMove::TeleportActivate { .. }
@@ -433,12 +435,13 @@ impl GameRender {
                 Rgba::WHITE,
             );
 
-            let texture = if player.mushrooms == 0 {
+            let active = player.stunned_duration.is_none() && player.mushrooms > 0;
+            let texture = if !active {
                 &self.assets.sprites.abilities.throw_disable
             } else {
                 &self.assets.sprites.abilities.throw
             };
-            let feedback = if player.mushrooms > 0 && ui.ability_throw.hovered
+            let feedback = if active && ui.ability_throw.hovered
                 || matches!(player.submitted_move, PlayerMove::Throw { .. })
             {
                 ui.ability_throw.position.width() * 0.1

@@ -300,6 +300,9 @@ impl SharedModel {
             let Some(player) = self.players.get_mut(&player_id) else {
                 continue;
             };
+            if player.stunned_duration.is_some() {
+                continue;
+            }
             match &player.submitted_move {
                 PlayerMove::Normal { path, .. } => {
                     if player.resolution_speed_left == resolving_speed

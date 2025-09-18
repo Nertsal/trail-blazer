@@ -252,7 +252,7 @@ impl Game {
         let Some(player) = self.model.shared.players.get_mut(&self.model.player_id) else {
             return;
         };
-        if player.cooldown_sprint > 0 || player.is_channeling {
+        if player.stunned_duration.is_some() || player.cooldown_sprint > 0 || player.is_channeling {
             return;
         }
         match &mut player.submitted_move {
@@ -272,7 +272,7 @@ impl Game {
         let Some(player) = self.model.shared.players.get_mut(&self.model.player_id) else {
             return;
         };
-        if player.cooldown_teleport > 0 {
+        if player.stunned_duration.is_some() || player.cooldown_teleport > 0 {
             return;
         }
         match player.submitted_move {
@@ -293,6 +293,9 @@ impl Game {
         let Some(player) = self.model.shared.players.get_mut(&self.model.player_id) else {
             return;
         };
+        if player.stunned_duration.is_some() || player.mushrooms == 0 {
+            return;
+        }
         player.submitted_move = match player.submitted_move {
             PlayerMove::Throw { .. } => PlayerMove::default(),
             _ => PlayerMove::Throw {
