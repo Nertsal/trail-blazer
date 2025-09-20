@@ -131,6 +131,7 @@ impl Game {
             if player.id == self.model.player_id
                 && let Phase::Planning { .. } = self.model.shared.phase
                 && player.stunned_duration.is_none()
+                && !player.is_channeling
             {
                 self.drag = Some(Drag {
                     target: DragTarget::Player {
@@ -303,7 +304,7 @@ impl Game {
         let Some(player) = self.model.shared.players.get_mut(&self.model.player_id) else {
             return;
         };
-        if player.stunned_duration.is_some() || player.mushrooms == 0 {
+        if player.stunned_duration.is_some() || player.mushrooms == 0 || player.is_channeling {
             return;
         }
         player.submitted_move = match player.submitted_move {

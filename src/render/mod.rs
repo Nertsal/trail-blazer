@@ -113,30 +113,30 @@ impl GameRender {
         }
 
         // Tile highlights
-        if let Some(player) = model.shared.players.get(&model.player_id) {
-            if player.is_channeling {
-                let target = match player.submitted_move {
-                    PlayerMove::TeleportActivate { teleport_to } => teleport_to,
-                    _ => player.pos,
-                };
-                for dx in -2..=2 {
-                    let range = 2 - dx.abs();
-                    for dy in -range..=range {
-                        let pos = player.pos + vec2(dx, dy);
-                        if player.pos != pos
-                            && target != pos
-                            && map.is_in_bounds(pos)
-                            && !map.walls.contains(&pos)
-                        {
-                            let tile = &self.assets.sprites.highlight_tile;
-                            let pos = map.tile_bounds(pos).as_f32();
-                            geng_utils::texture::DrawTexture::new(tile)
-                                .fit(pos, vec2(0.5, 0.5))
-                                .draw(&model.camera, &self.geng, framebuffer);
-                        }
+        if let Some(player) = model.shared.players.get(&model.player_id)
+            && player.is_channeling
+        {
+            let target = match player.submitted_move {
+                PlayerMove::TeleportActivate { teleport_to } => teleport_to,
+                _ => player.pos,
+            };
+            let range = 3;
+            for dx in -range..=range {
+                let range = range - dx.abs();
+                for dy in -range..=range {
+                    let pos = player.pos + vec2(dx, dy);
+                    if player.pos != pos
+                        && target != pos
+                        && map.is_in_bounds(pos)
+                        && !map.walls.contains(&pos)
+                    {
+                        let tile = &self.assets.sprites.highlight_tile;
+                        let pos = map.tile_bounds(pos).as_f32();
+                        geng_utils::texture::DrawTexture::new(tile)
+                            .fit(pos, vec2(0.5, 0.5))
+                            .draw(&model.camera, &self.geng, framebuffer);
                     }
                 }
-            } else {
             }
         }
 
@@ -238,32 +238,34 @@ impl GameRender {
                 );
             }
 
-            // Ghost State
-            let (ghost_state, ghost_pos) = match &player.submitted_move {
-                PlayerMove::Normal { sprint: true, path } => {
-                    ("sprinting", path.last().copied().unwrap_or(player.pos))
+            if player.id == model.player_id {
+                // Ghost State
+                let (ghost_state, ghost_pos) = match &player.submitted_move {
+                    PlayerMove::Normal { sprint: true, path } => {
+                        ("sprinting", path.last().copied().unwrap_or(player.pos))
+                    }
+                    PlayerMove::TeleportChanneling => ("channeling", player.pos),
+                    &PlayerMove::TeleportActivate { teleport_to } => ("teleporting", teleport_to),
+                    _ => ("", player.pos),
+                };
+                if (state.is_empty() || player.pos != ghost_pos) && !ghost_state.is_empty() {
+                    let pos = map.tile_bounds(ghost_pos).as_f32();
+                    self.geng.draw2d().draw2d(
+                        framebuffer,
+                        &model.camera,
+                        &draw2d::Text::unit(
+                            self.assets.font.clone(),
+                            ghost_state,
+                            Rgba::try_from("#393b42").unwrap(),
+                        )
+                        .transform(
+                            mat3::translate(vec2(pos.center().x, pos.min.y))
+                                * mat3::scale_uniform(
+                                    model.shared.map.cell_size.y.as_f32() * 0.1 * 0.6,
+                                ),
+                        ),
+                    );
                 }
-                PlayerMove::TeleportChanneling => ("channeling", player.pos),
-                &PlayerMove::TeleportActivate { teleport_to } => ("teleporting", teleport_to),
-                _ => ("", player.pos),
-            };
-            if (state.is_empty() || player.pos != ghost_pos) && !ghost_state.is_empty() {
-                let pos = map.tile_bounds(ghost_pos).as_f32();
-                self.geng.draw2d().draw2d(
-                    framebuffer,
-                    &model.camera,
-                    &draw2d::Text::unit(
-                        self.assets.font.clone(),
-                        ghost_state,
-                        Rgba::try_from("#393b42").unwrap(),
-                    )
-                    .transform(
-                        mat3::translate(vec2(pos.center().x, pos.min.y))
-                            * mat3::scale_uniform(
-                                model.shared.map.cell_size.y.as_f32() * 0.1 * 0.6,
-                            ),
-                    ),
-                );
             }
         }
 
