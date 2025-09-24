@@ -120,36 +120,50 @@ impl Game {
     }
 
     fn mouse_press(&mut self) {
-        if let Some(player) = self
+        let player_drag = self
             .model
             .shared
             .players
             .values_mut()
             .find(|player| player.pos == self.cursor_grid_pos)
-        {
-            // Drag player
-            if player.id == self.model.player_id
-                && let Phase::Planning { .. } = self.model.shared.phase
-                && player.stunned_duration.is_none()
-                && !player.is_channeling
-            {
-                self.drag = Some(Drag {
-                    target: DragTarget::Player {
-                        path: vec![player.pos],
-                    },
-                });
-                match &mut player.submitted_move {
-                    PlayerMove::Normal { path, .. } => {
-                        *path = vec![player.pos];
-                    }
-                    _ => {
-                        player.submitted_move = PlayerMove::Normal {
-                            path: vec![player.pos],
-                            sprint: false,
-                        };
-                        self.connection
-                            .send(ClientMessage::SubmitMove(player.submitted_move.clone()));
-                    }
+            .filter(|player| {
+                player.id == self.model.player_id
+                    && matches!(self.model.shared.phase, Phase::Planning { .. })
+                    && player.stunned_duration.is_none()
+                    && !player.is_channeling
+            })
+            .map(|player| (vec![player.pos], player));
+        let player_drag = match player_drag {
+            Some(v) => Some(v),
+            None => {
+                // Check ghost drag
+                self.model
+                    .shared
+                    .players
+                    .get_mut(&self.model.player_id)
+                    .and_then(|player| match &player.submitted_move {
+                        PlayerMove::Normal { path, .. } => Some((path.clone(), player)),
+                        _ => None,
+                    })
+            }
+        };
+        if let Some((new_path, player)) = player_drag {
+            self.drag = Some(Drag {
+                target: DragTarget::Player {
+                    path: new_path.clone(),
+                },
+            });
+            match &mut player.submitted_move {
+                PlayerMove::Normal { path, .. } => {
+                    *path = new_path;
+                }
+                _ => {
+                    player.submitted_move = PlayerMove::Normal {
+                        path: new_path,
+                        sprint: false,
+                    };
+                    self.connection
+                        .send(ClientMessage::SubmitMove(player.submitted_move.clone()));
                 }
             }
         } else if let Some(player) = self.model.shared.players.get_mut(&self.model.player_id) {
