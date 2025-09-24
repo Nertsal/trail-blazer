@@ -3,7 +3,7 @@ use crate::assets::Assets;
 use geng::prelude::*;
 
 /// Max distance that the cursor can travel for a click to register as a stationary one.
-const MAX_CLICK_DISTANCE: f32 = 1.0;
+const MAX_CLICK_DISTANCE: f32 = 5.0;
 
 #[derive(Clone)]
 pub struct UiContext {

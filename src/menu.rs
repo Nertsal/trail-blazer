@@ -203,6 +203,7 @@ impl geng::State for MainMenu {
             }
             geng::Event::TouchEnd(touch) if Some(touch.id) == self.active_touch => {
                 self.ui_context.cursor.cursor_move(touch.position.as_f32());
+                self.active_touch = None;
             }
             // geng::Event::KeyPress { key } => {
             //     if let geng::Key::Backspace = key {
