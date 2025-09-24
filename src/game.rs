@@ -366,7 +366,8 @@ impl geng::State for Game {
                 .cursor
                 .cursor_move(cursor_pos.screen.as_f32());
         }
-        self.ui_context.update(delta_time as f32);
+        self.ui_context
+            .update(delta_time as f32, self.active_touch.is_some());
         self.ui.update(&mut self.ui_context, self.framebuffer_size);
 
         if self.ui.ability_sprint.mouse_left.just_pressed {

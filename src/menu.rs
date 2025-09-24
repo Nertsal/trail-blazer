@@ -18,6 +18,7 @@ pub struct MainMenu {
     framebuffer_size: vec2<usize>,
     post_texture: ugli::Texture,
     time: f32,
+    active_touch: Option<u64>,
 
     characters: Vec<Character>,
     character_i: usize,
@@ -66,6 +67,7 @@ impl MainMenu {
             framebuffer_size: vec2(1, 1),
             post_texture: geng_utils::texture::new_texture(geng.ugli(), vec2(1, 1)),
             time: 0.0,
+            active_touch: None,
 
             character_i: characters
                 .iter()
@@ -84,16 +86,22 @@ impl MainMenu {
 
 impl geng::State for MainMenu {
     fn transition(&mut self) -> Option<geng::state::Transition> {
-        // let connection = geng::net::client::connect(&args.connect.unwrap())
-        //     .await
-        //     .unwrap();
-        self.transition.take()
+        let transition = self.transition.take();
+        if transition.is_some() {
+            self.geng.window().stop_text_edit();
+        }
+        transition
     }
 
     fn update(&mut self, delta_time: f64) {
         self.time += delta_time as f32;
-        self.ui_context.update(delta_time as f32);
+        self.ui_context
+            .update(delta_time as f32, self.active_touch.is_some());
         self.ui.update(&mut self.ui_context, self.framebuffer_size);
+
+        if self.ui.name.mouse_left.clicked {
+            self.geng.window().start_text_edit(&self.name);
+        }
 
         if self.ui.color_prev.mouse_left.clicked {
             self.color_i = if self.color_i == 0 {
@@ -187,15 +195,25 @@ impl geng::State for MainMenu {
             geng::Event::CursorMove { position } => {
                 self.ui_context.cursor.cursor_move(position.as_f32());
             }
-            geng::Event::KeyPress { key } => {
-                if let geng::Key::Backspace = key {
-                    self.name.pop();
-                } else if let Some(char) = key_to_char(key)
-                    && self.name.len() < 10
-                {
-                    self.name.push(char);
-                }
+            geng::Event::TouchStart(touch) if self.active_touch.is_none() => {
+                self.ui_context.cursor.cursor_move(touch.position.as_f32());
             }
+            geng::Event::TouchMove(touch) if Some(touch.id) == self.active_touch => {
+                self.ui_context.cursor.cursor_move(touch.position.as_f32());
+            }
+            geng::Event::TouchEnd(touch) if Some(touch.id) == self.active_touch => {
+                self.ui_context.cursor.cursor_move(touch.position.as_f32());
+            }
+            // geng::Event::KeyPress { key } => {
+            //     if let geng::Key::Backspace = key {
+            //         self.name.pop();
+            //     } else if let Some(char) = key_to_char(key)
+            //         && self.name.len() < 10
+            //     {
+            //         self.name.push(char);
+            //     }
+            // }
+            geng::Event::EditText(name) => self.name = name,
             _ => (),
         }
     }

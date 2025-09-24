@@ -36,12 +36,12 @@ impl UiContext {
     /// Should be called before layout.
     /// Updates input values.
     // TODO: use window from context
-    pub fn update(&mut self, delta_time: f32) {
+    pub fn update(&mut self, delta_time: f32, touch: bool) {
         self.real_time += delta_time;
         self.delta_time = delta_time;
         let window = self.geng.window();
         self.cursor.update(
-            geng_utils::key::is_key_pressed(window, [geng::MouseButton::Left]),
+            touch || geng_utils::key::is_key_pressed(window, [geng::MouseButton::Left]),
             geng_utils::key::is_key_pressed(window, [geng::MouseButton::Right]),
         );
     }
