@@ -25,10 +25,16 @@ pub struct Game {
     time: FTime,
 
     framebuffer_size: vec2<usize>,
-    cursor_pos: vec2<f64>,
-    cursor_world_pos: vec2<FCoord>,
-    cursor_grid_pos: vec2<ICoord>,
+    active_touch: Option<u64>,
+    cursor_pos: Option<CursorPos>,
     drag: Option<Drag>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct CursorPos {
+    screen: vec2<f64>,
+    world: vec2<FCoord>,
+    grid: vec2<ICoord>,
 }
 
 pub struct GameUi {
@@ -71,9 +77,8 @@ impl Game {
             time: FTime::ZERO,
 
             framebuffer_size: vec2(1, 1),
-            cursor_pos: vec2::ZERO,
-            cursor_world_pos: vec2::ZERO,
-            cursor_grid_pos: vec2::ZERO,
+            active_touch: None,
+            cursor_pos: None,
             drag: None,
         }
     }
@@ -115,17 +120,34 @@ impl Game {
                 }
                 _ => {}
             },
+            geng::Event::TouchStart(touch) if self.active_touch.is_none() => {
+                self.active_touch = Some(touch.id);
+                self.cursor_move(touch.position);
+                self.mouse_press();
+            }
+            geng::Event::TouchMove(touch) if Some(touch.id) == self.active_touch => {
+                self.cursor_move(touch.position)
+            }
+            geng::Event::TouchEnd(touch) if Some(touch.id) == self.active_touch => {
+                self.cursor_move(touch.position);
+                self.mouse_release();
+                self.cursor_pos = None;
+            }
             _ => {}
         }
     }
 
     fn mouse_press(&mut self) {
+        let Some(cursor_pos) = self.cursor_pos else {
+            return;
+        };
+
         let player_drag = self
             .model
             .shared
             .players
             .values_mut()
-            .find(|player| player.pos == self.cursor_grid_pos)
+            .find(|player| Some(player.pos) == self.cursor_pos.map(|pos| pos.grid))
             .filter(|player| {
                 player.id == self.model.player_id
                     && matches!(self.model.shared.phase, Phase::Planning { .. })
@@ -168,18 +190,18 @@ impl Game {
             }
         } else if let Some(player) = self.model.shared.players.get_mut(&self.model.player_id) {
             if player.is_channeling {
-                if !self.model.shared.map.walls.contains(&self.cursor_grid_pos)
-                    && self.model.shared.map.is_in_bounds(self.cursor_grid_pos)
-                    && shared::distance(player.pos, self.cursor_grid_pos) <= 3
+                if !self.model.shared.map.walls.contains(&cursor_pos.grid)
+                    && self.model.shared.map.is_in_bounds(cursor_pos.grid)
+                    && shared::distance(player.pos, cursor_pos.grid) <= 3
                 {
                     player.submitted_move = PlayerMove::TeleportActivate {
-                        teleport_to: self.cursor_grid_pos,
+                        teleport_to: cursor_pos.grid,
                     };
                     self.connection
                         .send(ClientMessage::SubmitMove(player.submitted_move.clone()));
                 }
             } else if let PlayerMove::Throw { direction } = &mut player.submitted_move {
-                let new_dir = (self.cursor_grid_pos - player.pos).map(|x| x.clamp_abs(1));
+                let new_dir = (cursor_pos.grid - player.pos).map(|x| x.clamp_abs(1));
                 if new_dir.x.abs() + new_dir.y.abs() == 1 {
                     *direction = new_dir;
                     self.connection
@@ -206,17 +228,17 @@ impl Game {
     }
 
     fn cursor_move(&mut self, position: vec2<f64>) {
-        self.cursor_pos = position;
-        self.cursor_world_pos = self
+        let world_pos = self
             .model
             .camera
             .screen_to_world(self.framebuffer_size.as_f32(), position.as_f32())
             .as_r32();
-        self.cursor_grid_pos = self
-            .model
-            .shared
-            .map
-            .from_world_unbound(self.cursor_world_pos);
+        let cursor_pos = CursorPos {
+            screen: position,
+            world: world_pos,
+            grid: self.model.shared.map.from_world_unbound(world_pos),
+        };
+        self.cursor_pos = Some(cursor_pos);
 
         if let Some(drag) = &mut self.drag {
             match &mut drag.target {
@@ -236,20 +258,20 @@ impl Game {
                         .len()
                         .checked_sub(2)
                         .and_then(|i| path.get(i))
-                        .is_some_and(|&prev_pos| prev_pos == self.cursor_grid_pos)
+                        .is_some_and(|&prev_pos| prev_pos == cursor_pos.grid)
                     {
                         // Cancel last move
                         path.pop();
                         update = true;
                     } else if path.len() <= player.speed(sprint)
-                        && !path.contains(&self.cursor_grid_pos)
+                        && !path.contains(&cursor_pos.grid)
                         && let Some(&last) = path.last()
-                        && shared::are_adjacent(last, self.cursor_grid_pos)
-                        && !self.model.shared.map.walls.contains(&self.cursor_grid_pos)
-                        && self.model.shared.map.is_in_bounds(self.cursor_grid_pos)
+                        && shared::are_adjacent(last, cursor_pos.grid)
+                        && !self.model.shared.map.walls.contains(&cursor_pos.grid)
+                        && self.model.shared.map.is_in_bounds(cursor_pos.grid)
                     {
                         // Add tile
-                        path.push(self.cursor_grid_pos);
+                        path.push(cursor_pos.grid);
                         update = true;
                     }
 
@@ -339,7 +361,11 @@ impl geng::State for Game {
 
     fn update(&mut self, delta_time: f64) {
         self.time += FTime::new(delta_time as f32);
-        self.ui_context.cursor.cursor_move(self.cursor_pos.as_f32());
+        if let Some(cursor_pos) = self.cursor_pos {
+            self.ui_context
+                .cursor
+                .cursor_move(cursor_pos.screen.as_f32());
+        }
         self.ui_context.update(delta_time as f32);
         self.ui.update(&mut self.ui_context, self.framebuffer_size);
 
