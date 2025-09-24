@@ -152,8 +152,8 @@ impl SharedModel {
         let Phase::Starting { .. } = self.phase else {
             return;
         };
-        self.phase = Phase::Resolution {
-            next_move_in: r32(TIME_PER_PLAN),
+        self.phase = Phase::Planning {
+            time_left: r32(TIME_PER_PLAN),
         };
     }
 

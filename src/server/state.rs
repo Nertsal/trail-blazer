@@ -95,7 +95,9 @@ impl ServerState {
                     GameEvent::StartGame => {
                         self.model.start_game();
                         for client in self.clients.values_mut() {
-                            client.sender.send(ServerMessage::Sync(self.model.clone()));
+                            client
+                                .sender
+                                .send(ServerMessage::StartResolution(self.model.clone()));
                         }
                     }
                     GameEvent::StartResolution => {
