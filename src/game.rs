@@ -132,6 +132,7 @@ impl Game {
                 self.cursor_move(touch.position);
                 self.mouse_release();
                 self.cursor_pos = None;
+                self.active_touch = None;
             }
             _ => {}
         }
