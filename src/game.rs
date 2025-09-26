@@ -148,7 +148,7 @@ impl Game {
             .shared
             .players
             .values_mut()
-            .find(|player| Some(player.pos) == self.cursor_pos.map(|pos| pos.grid))
+            .find(|player| player.pos == cursor_pos.grid)
             .filter(|player| {
                 player.id == self.model.player_id
                     && matches!(self.model.shared.phase, Phase::Planning { .. })
@@ -165,7 +165,11 @@ impl Game {
                     .players
                     .get_mut(&self.model.player_id)
                     .and_then(|player| match &player.submitted_move {
-                        PlayerMove::Normal { path, .. } => Some((path.clone(), player)),
+                        PlayerMove::Normal { path, .. }
+                            if path.last() == Some(&cursor_pos.grid) =>
+                        {
+                            Some((path.clone(), player))
+                        }
                         _ => None,
                     })
             }
