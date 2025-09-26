@@ -64,10 +64,7 @@ impl SharedModel {
                 time_left: FTime::new(TIME_PER_PLAN),
             },
 
-            bases: vec![
-                map.bounds.center() - vec2(3, 0),
-                map.bounds.center() + vec2(4, 0),
-            ],
+            bases: vec![map.bounds.center()],
             players: HashMap::new(),
             mushrooms: Vec::new(),
             trails: Vec::new(),
